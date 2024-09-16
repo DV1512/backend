@@ -1,16 +1,15 @@
-use actix_web::HttpServer;
-use tokio::try_join;
-use tracing::info;
-use tracing_actix_web::TracingLogger;
 use crate::config::{cors, rate_limiter, rate_limiter_data};
 use crate::init_env::init_env;
 use crate::logging::init_tracing;
 use crate::server_error::ServerError;
+use actix_web::HttpServer;
+use tracing::info;
+use tracing_actix_web::TracingLogger;
 
+mod config;
+mod init_env;
 mod logging;
 mod server_error;
-mod init_env;
-mod config;
 
 #[actix::main]
 async fn main() -> Result<(), ServerError> {
@@ -32,9 +31,10 @@ async fn main() -> Result<(), ServerError> {
             .wrap(cors)
             .wrap(limiter)
             .wrap(TracingLogger::default())
-    }).bind(format!("0.0.0.0:{port}"))?.run().await?;
+    })
+    .bind(format!("0.0.0.0:{port}"))?
+    .run()
+    .await?;
 
     Ok(())
 }
-
-

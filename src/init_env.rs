@@ -1,5 +1,5 @@
-use dotenv::{dotenv, from_filename};
 use crate::server_error::ServerError;
+use dotenv::{dotenv, from_filename};
 
 /// Init the environment variables
 ///
@@ -17,7 +17,10 @@ pub fn init_env() -> Result<(), ServerError> {
     match from_filename(".env.local") {
         Ok(_) => {}
         Err(err) => {
-            return Err(ServerError::Error(format!("Error loading .env.local: {}", err)));
+            return Err(ServerError::Error(format!(
+                "Error loading .env.local: {}",
+                err
+            )));
         }
     };
 
@@ -25,7 +28,10 @@ pub fn init_env() -> Result<(), ServerError> {
     match from_filename(".env.production") {
         Ok(_) => {}
         Err(err) => {
-            return Err(ServerError::Error(format!("Error loading .env.production: {}", err)));
+            return Err(ServerError::Error(format!(
+                "Error loading .env.production: {}",
+                err
+            )));
         }
     };
 

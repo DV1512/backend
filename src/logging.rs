@@ -1,8 +1,8 @@
-use tracing_subscriber::{EnvFilter, Layer, Registry, filter::LevelFilter};
-use tracing_subscriber::fmt::Layer as FmtLayer;
-use tracing_subscriber::fmt::format::FmtSpan;
-use tracing_subscriber::layer::SubscriberExt;
 use crate::server_error::ServerError;
+use tracing_subscriber::fmt::format::FmtSpan;
+use tracing_subscriber::fmt::Layer as FmtLayer;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::{filter::LevelFilter, EnvFilter, Layer, Registry};
 
 #[inline]
 /// Initialize tracing with default settings
@@ -23,7 +23,7 @@ pub fn init_tracing() -> Result<(), ServerError> {
 
     let subscriber = Registry::default().with(def_layer);
 
-    tracing::subscriber::set_global_default(subscriber).map_err(|err| ServerError::SetGlobalDefaultError(err))?;
+    tracing::subscriber::set_global_default(subscriber)?;
 
     Ok(())
 }
