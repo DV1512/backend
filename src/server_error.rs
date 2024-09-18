@@ -13,4 +13,7 @@ pub enum ServerError {
 
     #[error("IoError: {0}")]
     IoError(#[from] std::io::Error),
+
+    #[error("DatabaseError: {0}")]
+    DatabaseError(#[from] surrealdb::Error),
 }
