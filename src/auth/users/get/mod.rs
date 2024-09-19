@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use surrealdb::engine::local::Db;
 use surrealdb::Surreal;
+use tosic_utils::{Select, Statement};
 use tracing::{error, info};
 
 pub async fn get_user_by_username<T>(db: &Arc<Surreal<T>>, username: &str) -> Result<UserInfo>
@@ -17,15 +18,9 @@ where
 {
     let sql = "SELECT * FROM type::table($table) WHERE url_safe_username = $username LIMIT 1";
 
-    let mut res = db
-        .query(sql)
-        .bind(("table", "user"))
-        .bind(("username", username))
-        .await?;
+    let query = Select::query("user").add_condition("url_safe_username", None, username).set_limit(1);
 
-    info!("Query result: {:?}", res);
-
-    let user: Option<UserInfo> = res.take(0)?;
+    let user: Option<UserInfo> = query.run(db, 0).await?;
 
     if let Some(user) = user {
         info!("User found: {:?}", user);
@@ -40,15 +35,11 @@ pub(crate) async fn get_user_by_email<T>(db: &Arc<Surreal<T>>, email: &str) -> R
 where
     T: surrealdb::Connection,
 {
-    let sql = "SELECT * FROM type::table($table) WHERE email = $email LIMIT 1";
+    let _sql = "SELECT * FROM type::table($table) WHERE email = $email LIMIT 1";
 
-    let mut res = db
-        .query(sql)
-        .bind(("table", "user"))
-        .bind(("email", email))
-        .await?;
+    let query = Select::query("user").add_condition("email", None, email).set_limit(1);
 
-    let user: Option<UserInfo> = res.take(0)?;
+    let user: Option<UserInfo> = query.run(db, 0).await?;
 
     if let Some(user) = user {
         Ok(user)

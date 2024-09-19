@@ -55,15 +55,15 @@ async fn init_internal_db() -> Result<(), ServerError> {
 
     INTERNAL_DB
         .signin(surrealdb::opt::auth::Root {
-            username: &db_user,
-            password: &db_pass,
+            username: db_user.as_str(),
+            password: db_pass.as_str(),
         })
         .await?;
 
     let namespace = tosic_utils::prelude::env!("SURREALDB_NAMESPACE", "default");
     let database = tosic_utils::prelude::env!("SURREALDB_DATABASE", "default");
 
-    INTERNAL_DB.use_ns(namespace).use_db(database).await?;
+    INTERNAL_DB.use_ns(namespace.as_str()).use_db(database.as_str()).await?;
 
     Ok(())
 }

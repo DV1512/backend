@@ -12,10 +12,9 @@ pub(crate) async fn get_user_by_token<T>(db: &Arc<Surreal<T>>, token: &str) -> R
 where
     T: surrealdb::Connection,
 {
-    let sql = "select user_id.* AS user, * from session where access_token = $access_token limit 1";
-    let mut res = db.query(sql).bind(("access_token", token)).await?;
+    let query = Select::query("session").add_field("user_id.*", Some("user")).add_field("*", None).add_condition("access_token", None, token).set_limit(1);
 
-    let user: Option<UserSessionWithInfo> = res.take(0)?;
+    let user: Option<UserSessionWithInfo> = query.run(db, 0).await?;
 
     if let Some(user) = user {
         Ok(user.user.expect("User not found"))
