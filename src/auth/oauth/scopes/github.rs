@@ -211,7 +211,6 @@ impl From<&GithubScope> for &str{
             GithubScope::Workflow => "workflow",
         }
     }
-
 }
 
 
@@ -253,10 +252,8 @@ impl From<String> for GithubScope {
             "codes_space" => GithubScope::CodesSpace,
             "workflow" => GithubScope::Workflow,
             _ => GithubScope::NoScope,
-
         }
     }
-
 }
 
 impl From<&String> for GithubScope {
@@ -302,7 +299,6 @@ impl From<&String> for GithubScope {
     }
 
 }
-
 
 impl From<&str> for GithubScope {
     fn from(scope: &str) -> Self {
@@ -445,21 +441,14 @@ pub struct GithubScopes{
 
 impl From<Vec<GithubScope>> for GithubScopes {
     fn from(scopes: Vec<GithubScope>) -> Self {
-        scopes
-            .iter()
-            .map(|s:&String| s.into())
-            .collect::<Vec<GithubScope>>()
-            .into()
-    }
-}
-impl From<GithubScopes> for Vec<String>{
-    fn from(scopes:GithubScopes) -> Self {
-        scopes.scopes.iter().map(|s:&GithubScope| s.into()).collect()
+        GithubScopes { scopes }
     }
 }
 
-impl From<Vec<GithubScope>> for GithubScopes {
-    fn from(scopes: Vec<GithubScope>) -> Self { Self { scopes } }
+impl From<GithubScopes> for Vec<String>{
+    fn from(scopes: GithubScopes) -> Self {
+        scopes.scopes.iter().map(|s| s.into()).collect()
+    }
 }
 
 impl Scopes<GithubScope> for GithubScopes {
@@ -468,11 +457,11 @@ impl Scopes<GithubScope> for GithubScopes {
         self
     }
     fn remove_scope(mut self, scope: GithubScope) -> Self {
-        self.scopes.retain(|s:&GithubScope| s != &scope);
+        self.scopes.retain(|s| s != &scope);
         self
     }
     fn scopes(&self) -> Vec<&str> {
-        self.scopes.iter().map(|s:GithubScopes| s.into()).collect()
+        self.scopes.iter().map(|s| s.into()).collect()
     }
 }
 
