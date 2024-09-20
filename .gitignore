@@ -20,3 +20,4 @@ target/
 # Added by cargo
 
 /target
+/migrations/definitions
