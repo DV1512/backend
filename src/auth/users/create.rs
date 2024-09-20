@@ -5,6 +5,7 @@ use surrealdb::Surreal;
 use crate::auth::UserInfo;
 use crate::Record;
 
+#[tracing::instrument(skip(db, user))]
 pub async fn create_user<T>(db: &Arc<Surreal<T>>, user: UserInfo) -> Result<Record>
 where
     T: surrealdb::Connection,

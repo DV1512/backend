@@ -8,6 +8,7 @@ use tokio::try_join;
 use tosic_utils::{Filter, QueryBuilder, Select, Statement};
 use tracing::error;
 
+#[tracing::instrument(skip(db))]
 pub(crate) async fn get_user_by_token<T>(db: &Arc<Surreal<T>>, token: &str) -> Result<UserInfo>
 where
     T: surrealdb::Connection,
@@ -83,6 +84,7 @@ fn construct_basic_query(filter: &GetUserByFilter) -> (QueryBuilder<Select>, Que
 }
 
 #[allow(dead_code)]
+#[tracing::instrument(skip(db))]
 pub(crate) async fn get_users_by_filter<T>(
     db: &Arc<Surreal<T>>,
     filter: GetUserByFilter,

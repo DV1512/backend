@@ -8,6 +8,7 @@ use tosic_utils::filter::Filter;
 use tosic_utils::query::delete::Delete;
 use tosic_utils::query::select::Select;
 use tosic_utils::query::{Query, Statement};
+use tosic_utils::Create;
 use tracing::error;
 
 #[derive(Debug, Serialize, Deserialize, PartialOrd, Eq, PartialEq, Clone)]
@@ -39,6 +40,7 @@ impl UserSessionWithInfo {
     }
 
     #[allow(dead_code)]
+    #[tracing::instrument]
     async fn fetch_with_filter(filter: Filter) -> Option<Self> {
         Select::query("session")
             .add_field("user_id.*", Some("user"))
@@ -54,6 +56,7 @@ impl UserSessionWithInfo {
     }
 
     #[allow(dead_code)]
+    #[tracing::instrument]
     pub(crate) async fn fetch_by_email(email: String) -> Option<Self> {
         let filter = Filter::default()
             .add_condition("email".to_string(), None, email)
@@ -95,6 +98,7 @@ impl UserSession {
     }
 
     /// Update the session to reflect a new access token, refresh token, and expiration time
+    #[tracing::instrument]
     pub(crate) async fn update(self) -> Result<Self> {
         let sql = "UPDATE session MERGE { access_token: $access_token, refresh_token: $refresh_token, expires_at: time::now() + 1h } WHERE email = $email";
 
@@ -114,20 +118,17 @@ impl UserSession {
         }
     }
 
+    #[tracing::instrument]
     pub(crate) async fn create(self) -> Result<Self> {
-        let sql = "CREATE session SET access_token = $access_token, refresh_token = $refresh_token, user_id = $user_id, email = $email, expires_at = <datetime> $expires_at, created_at = <datetime> $created_at";
+        let query = Create::query("session")
+            .add_field_to_content("access_token", self.access_token)
+            .add_field_to_content("refresh_token", self.refresh_token)
+            .add_field_to_content("user_id", self.user_id)
+            .add_field_to_content("email", self.email)
+            .add_field_to_content("expires_at", Utc::now() + Duration::hours(1))
+            .add_field_to_content("created_at", Utc::now());
 
-        let mut res = INTERNAL_DB
-            .query(sql)
-            .bind(("access_token", self.access_token))
-            .bind(("refresh_token", self.refresh_token))
-            .bind(("email", self.email))
-            .bind(("user_id", self.user_id))
-            .bind(("expires_at", Utc::now() + Duration::hours(1)))
-            .bind(("created_at", Utc::now()))
-            .await?;
-
-        let sessions: Option<Self> = res.take(0)?;
+        let sessions: Option<Self> = query.run_lazy(&INTERNAL_DB, 0).await?;
 
         if let Some(session) = sessions {
             Ok(session)
@@ -136,49 +137,32 @@ impl UserSession {
         }
     }
 
+    #[tracing::instrument]
     pub(crate) async fn fetch() -> Result<Vec<Self>> {
-        let sql = Select::query("session").construct();
+        let sql = Select::query("session");
 
-        let mut res = INTERNAL_DB.query(sql).await?;
-
-        let sessions: Vec<Self> = res.take(0)?;
+        let sessions: Vec<Self> = sql.run_lazy(&INTERNAL_DB, 0).await?;
 
         Ok(sessions)
     }
+
+    #[tracing::instrument]
     pub(crate) async fn fetch_by_id(id: Thing) -> Option<Self> {
-        let sql = "select * from session where id = $id and expires_at > time::now() limit 1";
+        let query = Select::query("session").add_condition("id", None, id).add_condition("expires_at", Some(">"), Datetime::default()).set_limit(1);
 
-        let mut res = match INTERNAL_DB.query(sql).bind(("id", id)).await {
-            Ok(res) => res,
-            Err(e) => {
-                error!("Error fetching session by access token: {}", e);
-                return None;
-            }
-        };
-
-        let session: Option<Self> = match res.take(0) {
+        let session: Option<Self> = match query.run_lazy(&INTERNAL_DB, 0).await {
             Ok(session) => session,
             Err(_) => return None,
         };
 
         session
     }
+
+    #[tracing::instrument]
     pub(crate) async fn fetch_by_access_token(access_token: String) -> Option<Self> {
-        let sql = "select * from session where access_token = $access_token and expires_at > time::now() limit 1";
+        let query = Select::query("session").add_condition("access_token", None, access_token).add_condition("expires_at", Some(">"), Datetime::default()).set_limit(1);
 
-        let mut res = match INTERNAL_DB
-            .query(sql)
-            .bind(("access_token", access_token))
-            .await
-        {
-            Ok(res) => res,
-            Err(e) => {
-                error!("Error fetching session by access token: {}", e);
-                return None;
-            }
-        };
-
-        let session: Option<Self> = match res.take(0) {
+        let session: Option<Self> = match query.run_lazy(&INTERNAL_DB, 0).await {
             Ok(session) => session,
             Err(_) => return None,
         };
@@ -186,6 +170,7 @@ impl UserSession {
         session
     }
 
+    #[tracing::instrument]
     async fn fetch_with_filter(filter: Filter) -> Option<Self> {
         let sql = Select::query("session").set_filter(filter).set_limit(1);
 
@@ -199,6 +184,7 @@ impl UserSession {
         })
     }
 
+    #[tracing::instrument]
     pub(crate) async fn fetch_by_email(email: String) -> Option<Self> {
         let filter = Filter::default()
             .add_condition("email".to_string(), None, email)
@@ -213,6 +199,7 @@ impl UserSession {
         session
     }
 
+    #[tracing::instrument]
     pub(crate) async fn fetch_by_user_id(user_id: Thing) -> Option<Self> {
         let sql = Filter::default()
             .add_condition("user_id".to_string(), None, user_id)
@@ -227,6 +214,7 @@ impl UserSession {
         session
     }
 
+    #[tracing::instrument]
     pub(crate) async fn delete(self) -> Result<()> {
         let sql = Delete::query("session")
             .add_condition("email", None, self.email)
@@ -237,6 +225,7 @@ impl UserSession {
         Ok(())
     }
 
+    #[tracing::instrument]
     pub async fn delete_expired() -> Result<()> {
         let query =
             Delete::query("session").add_condition("expires_at", Some("<"), Datetime::default());

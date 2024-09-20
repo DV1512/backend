@@ -86,6 +86,7 @@ where
         (auth_url.to_string(), csrf_token)
     }
 
+    #[tracing::instrument(skip(self, code))]
     pub async fn exchange_code_for_token(
         &self,
         code: String,

@@ -11,6 +11,7 @@ use surrealdb::Surreal;
 use tosic_utils::{Select, Statement};
 use tracing::{error, info};
 
+#[tracing::instrument(skip(db))]
 pub async fn get_user_by_username<T>(db: &Arc<Surreal<T>>, username: &str) -> Result<UserInfo>
 where
     T: surrealdb::Connection,
@@ -28,6 +29,7 @@ where
     }
 }
 
+#[tracing::instrument(skip(db, email))]
 pub(crate) async fn get_user_by_email<T>(db: &Arc<Surreal<T>>, email: &str) -> Result<UserInfo>
 where
     T: surrealdb::Connection,
@@ -43,6 +45,7 @@ where
     }
 }
 
+#[tracing::instrument(skip(db, email))]
 pub(crate) async fn get_user<T>(db: &Arc<Surreal<T>>, email: &str) -> Option<UserInfo>
 where
     T: surrealdb::Connection,
@@ -60,6 +63,7 @@ pub struct GetUserBy {
     pub token: Option<String>,
 }
 
+#[tracing::instrument(skip(db, data))]
 pub(crate) async fn get_user_by_internal<T>(
     db: &Arc<Surreal<T>>,
     data: &GetUserBy,

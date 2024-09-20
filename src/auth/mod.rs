@@ -38,6 +38,7 @@ pub(crate) struct Users {
     pub(crate) pagination: PaginationResponse,
 }
 
+#[tracing::instrument(skip(password))]
 async fn create_auth_for_user(
     user_id: Record,
     providers: Vec<OauthProvider>,

@@ -34,6 +34,7 @@ async fn setup_db() -> Result<(), ServerError> {
     Ok(())
 }
 
+#[tracing::instrument]
 pub async fn db(ns: &str, db: &str) -> Result<Surreal<Client>, ServerError> {
     let db_url = tosic_utils::prelude::env!("SURREALDB_URL");
     let db_user = tosic_utils::prelude::env!("SURREALDB_USER");
@@ -52,6 +53,7 @@ pub async fn db(ns: &str, db: &str) -> Result<Surreal<Client>, ServerError> {
     Ok(database)
 }
 
+#[tracing::instrument]
 pub async fn app_state() -> Result<web::Data<AppState>, ServerError> {
     let database = db("default", "default").await?;
 

@@ -64,6 +64,7 @@ pub struct GoogleOauth {
 }
 
 impl GoogleOauth {
+    #[tracing::instrument(name = "GoogleOauth::new")]
     pub async fn new() -> Result<Self> {
         let mut details = GoogleProvider::fetch().await?;
 
@@ -101,6 +102,7 @@ impl GoogleOauth {
         self.basic.get_authorization_url()
     }
 
+    #[tracing::instrument(skip(self, code, db))]
     async fn exchange_code_internal<T>(
         &self,
         code: String,
@@ -184,6 +186,7 @@ impl GoogleOauth {
         self.exchange_code_internal(code, db).await
     }
 
+    #[tracing::instrument(skip(self))]
     async fn get_user_info(&self, access_token: &str) -> Result<GoogleUserInfo> {
         debug!("Fetching user info for access token: {}", access_token);
 

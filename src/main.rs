@@ -1,4 +1,3 @@
-use std::ops::Deref;
 use crate::config::{cors, rate_limiter, rate_limiter_data};
 use crate::init_env::init_env;
 use crate::logging::init_tracing;
