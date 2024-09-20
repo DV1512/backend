@@ -86,6 +86,8 @@ async fn main() -> Result<(), ServerError> {
 
     let port = tosic_utils::prelude::env!("PORT", "9999");
     let frontend_url = tosic_utils::prelude::env!("FRONTEND_URL", "http://localhost:42069");
+    let base_url = tosic_utils::prelude::env!("BASE_URL", "http://localhost:9999");
+
     let (rate_limit_backend, max_requests, limit_duration) =
         rate_limiter_data(("LIMIT", "10"), ("LIMIT_DURATION", "60"));
 
@@ -102,6 +104,7 @@ async fn main() -> Result<(), ServerError> {
             .wrap(TracingLogger::default())
             .app_data(state.clone())
             .external_resource("frontend", frontend_url.clone())
+            .external_resource("base_url", base_url.clone())
             .service(user_service())
             .service(oauth_service())
     })
