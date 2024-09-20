@@ -78,7 +78,7 @@ impl GoogleOauth {
             bail!("Google Provider is not configured correctly");
         }
 
-        let base_url = env::var("BASE_URL").unwrap_or("http://localhost:7856".to_string());
+        let base_url = env::var("BASE_URL").unwrap_or("http://localhost:9999".to_string());
         let endpoint = config.get_redirect_endpoint();
         let redirect_url = format!("{base_url}{endpoint}");
 
@@ -109,7 +109,7 @@ impl GoogleOauth {
         db: &Arc<Surreal<T>>,
     ) -> Result<UserSession>
     where
-        T: surrealdb::Connection,
+        T: Connection,
     {
         let token = match self.basic.exchange_code_for_token(code).await {
             Ok(t) => t,
