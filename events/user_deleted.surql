@@ -1,4 +1,4 @@
-DEFINE EVENT user_deleted ON TABLE user
+DEFINE EVENT IF NOT EXISTS user_deleted ON TABLE user
     WHEN $before != NONE AND $after == NONE
     THEN {
         LET $user_id = $before.id;

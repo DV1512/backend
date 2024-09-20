@@ -1,4 +1,4 @@
-DEFINE TABLE provider SCHEMAFULL;
+DEFINE TABLE IF NOT EXISTS provider SCHEMAFULL;
 
-DEFINE FIELD name ON TABLE provider VALUE meta::id($this.id);
-DEFINE FIELD config ON provider TYPE option<record<provider_config>>;
+DEFINE FIELD IF NOT EXISTS name ON TABLE provider VALUE record::id($this.id);
+DEFINE FIELD IF NOT EXISTS config ON provider TYPE option<record<provider_config>>;

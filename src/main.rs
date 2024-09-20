@@ -1,3 +1,4 @@
+use std::ops::Deref;
 use crate::config::{cors, rate_limiter, rate_limiter_data};
 use crate::init_env::init_env;
 use crate::logging::init_tracing;
@@ -9,7 +10,8 @@ use serde::{Deserialize, Serialize};
 use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::sql::Thing;
 use surrealdb::Surreal;
-use tracing::info;
+use surrealdb_migrations::MigrationRunner;
+use tracing::{error, info};
 use tracing_actix_web::TracingLogger;
 use crate::auth::oauth::oauth_service;
 use crate::auth::users::user_service;
@@ -77,6 +79,11 @@ async fn main() -> Result<(), ServerError> {
     info!("Logging initialized");
 
     init_internal_db().await?;
+
+    match MigrationRunner::new(&INTERNAL_DB).up().await {
+        Ok(_) => info!("Migrations ran successfully"),
+        Err(e) => error!("Error running migrations: {}", e),
+    }
 
     let port = tosic_utils::prelude::env!("PORT", "9999");
     let frontend_url = tosic_utils::prelude::env!("FRONTEND_URL", "http://localhost:42069");

@@ -1,3 +1,3 @@
 DEFINE TABLE IF NOT EXISTS auth_for SCHEMAFULL TYPE RELATION FROM user_auth TO user;
 
-DEFINE INDEX auth_for_user_index ON auth_for FIELDS out, in UNIQUE;
+DEFINE INDEX IF NOT EXISTS auth_for_user_index ON auth_for FIELDS out, in UNIQUE;

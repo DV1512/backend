@@ -1,4 +1,4 @@
-DEFINE EVENT session_deleted ON TABLE session
+DEFINE EVENT IF NOT EXISTS session_deleted ON TABLE session
     WHEN $before != NONE AND $after == NONE
     THEN {
         LET $session_id = $before.id;

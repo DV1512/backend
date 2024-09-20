@@ -1,4 +1,4 @@
-DEFINE EVENT comment_deleted ON TABLE comment
+DEFINE EVENT IF NOT EXISTS comment_deleted ON TABLE comment
     WHEN $before != NONE AND $after == NONE
     THEN {
         LET $comment_id = $before.id;

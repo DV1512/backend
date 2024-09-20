@@ -1,14 +1,14 @@
-DEFINE TABLE post_likes_count SCHEMAFULL PERMISSIONS NONE;
-DEFINE FIELD post_id ON post_likes_count TYPE record<post> PERMISSIONS FULL;
-DEFINE FIELD likes_count ON post_likes_count TYPE int DEFAULT 0 PERMISSIONS FULL;
-DEFINE INDEX post_likes_count_index ON post_likes_count FIELDS post_id UNIQUE;
+DEFINE TABLE IF NOT EXISTS post_likes_count SCHEMAFULL PERMISSIONS NONE;
+DEFINE FIELD IF NOT EXISTS post_id ON post_likes_count TYPE record<post> PERMISSIONS FULL;
+DEFINE FIELD IF NOT EXISTS likes_count ON post_likes_count TYPE int DEFAULT 0 PERMISSIONS FULL;
+DEFINE INDEX IF NOT EXISTS post_likes_count_index ON post_likes_count FIELDS post_id UNIQUE;
 
-DEFINE TABLE comment_likes_count SCHEMAFULL PERMISSIONS NONE;
-DEFINE FIELD comment_id ON comment_likes_count TYPE record<comment> PERMISSIONS FULL;
-DEFINE FIELD likes_count ON comment_likes_count TYPE int DEFAULT 0 PERMISSIONS FULL;
-DEFINE INDEX comment_likes_count_index ON comment_likes_count FIELDS comment_id UNIQUE;
+DEFINE TABLE IF NOT EXISTS comment_likes_count SCHEMAFULL PERMISSIONS NONE;
+DEFINE FIELD IF NOT EXISTS comment_id ON comment_likes_count TYPE record<comment> PERMISSIONS FULL;
+DEFINE FIELD IF NOT EXISTS likes_count ON comment_likes_count TYPE int DEFAULT 0 PERMISSIONS FULL;
+DEFINE INDEX IF NOT EXISTS comment_likes_count_index ON comment_likes_count FIELDS comment_id UNIQUE;
 
-DEFINE EVENT increment_like_count ON likes
+DEFINE EVENT IF NOT EXISTS increment_like_count ON likes
 WHEN $before == NONE AND $after != NONE THEN {
     LET $item = $after.out;
 
@@ -16,7 +16,7 @@ WHEN $before == NONE AND $after != NONE THEN {
         THROW "Invalid item";
     };
 
-    LET $table_name = meta::table($item);
+    LET $table_name = record::table($item);
     LET $likes_table = string::join('_', $table_name, 'likes_count');
     LET $id_field = string::join('_', $table_name, 'id');
     LET $likes_record = (SELECT * FROM type::table($likes_table) WHERE type::field($id_field) == $item)[0];
@@ -37,7 +37,7 @@ WHEN $before == NONE AND $after != NONE THEN {
     }
 };
 
-DEFINE EVENT decrement_like_count ON likes
+DEFINE EVENT IF NOT EXISTS decrement_like_count ON likes
 WHEN $before != NONE AND $after == NONE THEN {
     LET $item = $before.out;
 
@@ -45,7 +45,7 @@ WHEN $before != NONE AND $after == NONE THEN {
         THROW "Invalid item";
     };
 
-    LET $table_name = meta::table($item);
+    LET $table_name = record::table($item);
     LET $likes_table = string::join('_', $table_name, 'likes_count');
     LET $id_field = string::join('_', $table_name, 'id');
     LET $current_count = (SELECT likes_count FROM type::table($likes_table) WHERE type::field($id_field) == $item)[0].likes_count ?? 0;

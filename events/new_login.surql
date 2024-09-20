@@ -1,4 +1,4 @@
-DEFINE EVENT new_login ON TABLE session
+DEFINE EVENT IF NOT EXISTS new_login ON TABLE session
     WHEN $before == NONE
     THEN {
         LET $user = (SELECT * FROM user WHERE id == $after.user_id);

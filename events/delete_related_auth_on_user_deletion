@@ -1,4 +1,4 @@
-DEFINE EVENT delete_related_auth_on_user_deletion ON TABLE user
+DEFINE EVENT IF NOT EXISTS delete_related_auth_on_user_deletion ON TABLE user
     WHEN $before != NONE AND $after == NONE
 THEN {
     RETURN "this should not run right";

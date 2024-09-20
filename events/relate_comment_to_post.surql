@@ -1,4 +1,4 @@
-DEFINE EVENT relate_comment_to_post ON TABLE comment
+DEFINE EVENT IF NOT EXISTS relate_comment_to_post ON TABLE comment
     WHEN $before == NONE
     THEN {
         LET $from = (SELECT * FROM comment WHERE id == $after.id)[0];

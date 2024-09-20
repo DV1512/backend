@@ -4678,47 +4678,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "surrealdb-beta"
-version = "2.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d90bda8ad21b0af3dcd68ac7c3c83510cfa018838283eb9e4114d8dd6ed5cca3"
-dependencies = [
- "arrayvec",
- "async-channel",
- "bincode",
- "chrono",
- "dmp",
- "futures",
- "geo",
- "indexmap 2.5.0",
- "path-clean",
- "pharos",
- "reblessive",
- "reqwest 0.12.7",
- "revision",
- "ring",
- "rust_decimal",
- "rustls 0.23.13",
- "rustls-pki-types",
- "semver",
- "serde",
- "serde-content",
- "serde_json",
- "surrealdb-core-beta",
- "thiserror",
- "tokio",
- "tokio-tungstenite",
- "tokio-util",
- "tracing",
- "trice",
- "url",
- "uuid",
- "wasm-bindgen-futures",
- "wasmtimer",
- "ws_stream_wasm",
-]
-
-[[package]]
 name = "surrealdb-core"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4772,6 +4731,7 @@ dependencies = [
  "rand",
  "reblessive",
  "regex",
+ "reqwest 0.12.7",
  "revision",
  "ring",
  "rmpv",
@@ -4805,89 +4765,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "surrealdb-core-beta"
-version = "2.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "856c96a309580a9228fd5ab5211aedeca86ee54e200f54f18eb179e052de2526"
-dependencies = [
- "addr",
- "ahash 0.8.11",
- "ammonia",
- "any_ascii",
- "argon2",
- "async-channel",
- "async-executor",
- "async-graphql",
- "base64 0.21.7",
- "bcrypt",
- "bincode",
- "blake3",
- "bytes",
- "castaway",
- "cedar-policy",
- "chrono",
- "ciborium",
- "dashmap 5.5.3",
- "deunicode",
- "dmp",
- "fst",
- "futures",
- "fuzzy-matcher",
- "geo",
- "geo-types",
- "hex",
- "ipnet",
- "jsonwebtoken",
- "lexicmp",
- "linfa-linalg",
- "md-5",
- "nanoid",
- "ndarray",
- "ndarray-stats",
- "num-traits",
- "num_cpus",
- "object_store",
- "pbkdf2",
- "pharos",
- "phf",
- "pin-project-lite",
- "quick_cache",
- "radix_trie",
- "rand",
- "reblessive",
- "regex",
- "reqwest 0.12.7",
- "revision",
- "ring",
- "rmpv",
- "roaring",
- "rust-stemmers",
- "rust_decimal",
- "scrypt",
- "semver",
- "serde",
- "serde-content",
- "serde_json",
- "sha1",
- "sha2",
- "snap",
- "storekey",
- "subtle",
- "surrealdb-derive",
- "thiserror",
- "tokio",
- "tracing",
- "trice",
- "ulid",
- "unicase",
- "url",
- "uuid",
- "wasm-bindgen-futures",
- "wasmtimer",
- "ws_stream_wasm",
-]
-
-[[package]]
 name = "surrealdb-derive"
 version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4899,9 +4776,8 @@ dependencies = [
 
 [[package]]
 name = "surrealdb-migrations"
-version = "2.0.0-preview.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8205323f0e7123f0f4392a4dc2019f001c06e800486f503560b4b34972e0de1e"
+version = "2.0.0"
+source = "git+https://github.com/retrokiller543/surrealdb-migrations.git#72c6589a6d46b3c207b503155534c08d779b7f93"
 dependencies = [
  "chrono",
  "chrono-human-duration",
@@ -4919,7 +4795,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sqlparser",
- "surrealdb-beta",
+ "surrealdb",
  "tokio",
 ]
 

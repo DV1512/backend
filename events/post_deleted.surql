@@ -1,4 +1,4 @@
-DEFINE EVENT post_deleted ON TABLE post
+DEFINE EVENT IF NOT EXISTS post_deleted ON TABLE post
     WHEN $before != NONE AND $after == NONE
     THEN {
         LET $post_id = $before.id;

@@ -18,7 +18,7 @@ tokio-cron-scheduler = "0.11.0"
 tosic-utils = { git = "https://github.com/retrokiller543/tosic-utils.git", features = ["env", "tracing", "surrealdb"] }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 actix-extensible-rate-limit = "0.4.0"
-surrealdb-migrations = { version =  "2.0.0-preview.3" }
+surrealdb-migrations = { git = "https://github.com/retrokiller543/surrealdb-migrations.git" }
 tracing = { version = "0.1.37", features = ["log"] }
 tracing-actix-web = "0.7.12"
 oauth2 = "4.4.2"
