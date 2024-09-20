@@ -9,7 +9,7 @@ actix-cors = "0.7.0"
 api-forge = { git = "https://github.com/retrokiller543/api-forge.git", features = ["native"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-surrealdb = { version = "2.0.1", features = ["kv-rocksdb"] }
+surrealdb = { version = "2.0.1" }
 tokio = { version = "1.40", features = ["full", "macros", "rt-multi-thread", "tracing"] }
 dotenv = "0.15"
 anyhow = "1.0.86"
