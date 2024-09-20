@@ -1,4 +1,5 @@
 pub mod google;
+mod github;
 
 use crate::INTERNAL_DB;
 use anyhow::{bail, Result};
@@ -11,6 +12,7 @@ use tracing::warn;
 pub enum OauthProviderName {
     Email,
     Google,
+    Github,
 }
 
 impl From<OauthProviderName> for String {
@@ -18,6 +20,7 @@ impl From<OauthProviderName> for String {
         match v {
             OauthProviderName::Email => "Basic".to_owned(),
             OauthProviderName::Google => "Google".to_owned(),
+            OauthProviderName::Github => "GitHub".to_owned(),
         }
     }
 }
