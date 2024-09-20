@@ -1,13 +1,12 @@
 pub(crate) mod utils;
 
-use crate::auth::users::get::utils::{get_user_by_token, GetUserByFilter};
+use crate::auth::users::get::utils::get_user_by_token;
 use crate::auth::UserInfo;
 use crate::AppState;
 use actix_web::{get, web, HttpResponse, Responder};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use surrealdb::engine::local::Db;
 use surrealdb::Surreal;
 use tosic_utils::{Select, Statement};
 use tracing::{error, info};
@@ -16,8 +15,6 @@ pub async fn get_user_by_username<T>(db: &Arc<Surreal<T>>, username: &str) -> Re
 where
     T: surrealdb::Connection,
 {
-    let sql = "SELECT * FROM type::table($table) WHERE url_safe_username = $username LIMIT 1";
-
     let query = Select::query("user").add_condition("url_safe_username", None, username).set_limit(1);
 
     let user: Option<UserInfo> = query.run(db, 0).await?;
@@ -35,8 +32,6 @@ pub(crate) async fn get_user_by_email<T>(db: &Arc<Surreal<T>>, email: &str) -> R
 where
     T: surrealdb::Connection,
 {
-    let _sql = "SELECT * FROM type::table($table) WHERE email = $email LIMIT 1";
-
     let query = Select::query("user").add_condition("email", None, email).set_limit(1);
 
     let user: Option<UserInfo> = query.run(db, 0).await?;
@@ -119,7 +114,7 @@ where
 #[get("/by")]
 pub(crate) async fn get_user_by(
     data: web::Query<GetUserBy>,
-    state: web::Data<AppState<Db>>,
+    state: web::Data<AppState>,
 ) -> impl Responder {
     let data = data.into_inner();
     let db = &state.db;

@@ -1,6 +1,6 @@
 use crate::auth::{session::UserSessionWithInfo, UserInfo, Users};
 use crate::{CountResponse, PaginationResponse};
-use anyhow::{bail, Result};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use surrealdb::Surreal;

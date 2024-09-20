@@ -16,4 +16,7 @@ pub enum ServerError {
 
     #[error("DatabaseError: {0}")]
     DatabaseError(#[from] surrealdb::Error),
+
+    #[error("Error: {0}")]
+    GenericError(#[from] anyhow::Error),
 }

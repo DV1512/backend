@@ -2,7 +2,7 @@ use super::basic::BasicOauth;
 use crate::auth::oauth::provider::google::GoogleProvider;
 use crate::auth::oauth::provider::Provider;
 use crate::auth::oauth::scopes::google::{GoogleScope, GoogleScopes};
-use crate::auth::oauth::{OAuthCallbackQuery, Oauth};
+use crate::auth::oauth::OAuthCallbackQuery;
 use crate::auth::users::create::create_user;
 use crate::auth::users::get_user;
 use crate::auth::{create_auth_for_user, session::UserSession, Role, UserInfo};
@@ -14,13 +14,8 @@ use oauth2::TokenResponse;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::sync::Arc;
-use surrealdb::engine::local::Db;
-#[cfg(feature = "in-memory-db")]
-use surrealdb::engine::local::Db;
-#[cfg(feature = "ws-db")]
-use surrealdb::engine::remote::ws::Client;
 use surrealdb::sql::Datetime;
-use surrealdb::Surreal;
+use surrealdb::{Connection, Surreal};
 use tracing::{debug, error, info};
 
 #[derive(Debug, Default, Clone, Request, Serialize)]
@@ -62,6 +57,7 @@ impl From<GoogleUserInfo> for UserInfo {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct GoogleOauth {
     basic: BasicOauth<GoogleScopes, GoogleScope>,
     details: GoogleProvider,
@@ -184,7 +180,7 @@ impl GoogleOauth {
         Ok(session)
     }
 
-    pub async fn exchange_code(&self, code: String, db: &Arc<Surreal<Db>>) -> Result<UserSession> {
+    pub async fn exchange_code<C: Connection>(&self, code: String, db: &Arc<Surreal<C>>) -> Result<UserSession> {
         self.exchange_code_internal(code, db).await
     }
 
@@ -213,8 +209,10 @@ impl GoogleOauth {
 }
 
 #[get("/login")]
-pub async fn google_login(oauth: web::Data<Oauth>) -> impl Responder {
+pub async fn google_login(state: web::Data<AppState>) -> impl Responder {
     info!("Redirecting to Google login page");
+    let oauth = state.oauth.clone();
+
     let (auth_url, _csrf_token) = oauth.google.get_auth_url();
 
     HttpResponse::Found()
@@ -225,11 +223,12 @@ pub async fn google_login(oauth: web::Data<Oauth>) -> impl Responder {
 #[get("/callback")]
 pub async fn google_callback(
     query: web::Query<OAuthCallbackQuery>,
-    state: web::Data<AppState<Db>>,
-    oauth: web::Data<Oauth>,
+    state: web::Data<AppState>,
     req: HttpRequest,
 ) -> impl Responder {
     info!("Google callback received");
+
+    let oauth = state.oauth.clone();
 
     let frontend_url = req.url_for_static("frontend").unwrap().to_string();
 

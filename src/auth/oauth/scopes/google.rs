@@ -1,6 +1,6 @@
 use crate::auth::oauth::basic::Scopes;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum GoogleScope {
     Email,
     Profile,
@@ -102,7 +102,7 @@ impl From<String> for &GoogleScope {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug, Clone)]
 pub struct GoogleScopes {
     scopes: Vec<GoogleScope>,
 }

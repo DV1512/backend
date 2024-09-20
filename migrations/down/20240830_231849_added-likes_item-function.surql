@@ -1,0 +1,1 @@
+REMOVE FUNCTION likes_item

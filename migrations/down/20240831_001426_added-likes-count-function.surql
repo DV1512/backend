@@ -1,0 +1,1 @@
+REMOVE FUNCTION fn::number_of_likes

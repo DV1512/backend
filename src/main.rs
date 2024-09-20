@@ -3,15 +3,16 @@ use crate::init_env::init_env;
 use crate::logging::init_tracing;
 use crate::server_error::ServerError;
 use crate::state::{app_state, AppState};
-use actix_web::{web, HttpServer};
+use actix_web::HttpServer;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use surrealdb::engine::local::Db;
 use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::sql::Thing;
 use surrealdb::Surreal;
 use tracing::info;
 use tracing_actix_web::TracingLogger;
+use crate::auth::oauth::oauth_service;
+use crate::auth::users::user_service;
 
 mod auth;
 mod config;
@@ -82,7 +83,7 @@ async fn main() -> Result<(), ServerError> {
     let (rate_limit_backend, max_requests, limit_duration) =
         rate_limiter_data(("LIMIT", "10"), ("LIMIT_DURATION", "60"));
 
-    let state: web::Data<AppState<Db>> = app_state().await?;
+    let state = app_state().await?;
 
     info!("Setting up server on port {}", port);
     HttpServer::new(move || {
@@ -95,6 +96,8 @@ async fn main() -> Result<(), ServerError> {
             .wrap(TracingLogger::default())
             .app_data(state.clone())
             .external_resource("frontend", frontend_url.clone())
+            .service(user_service())
+            .service(oauth_service())
     })
     .bind(format!("0.0.0.0:{port}"))?
     .run()

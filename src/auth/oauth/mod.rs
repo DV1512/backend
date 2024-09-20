@@ -9,6 +9,7 @@ use anyhow::Result;
 pub use google::GoogleOauth;
 use serde::Deserialize;
 
+#[derive(Debug, Clone)]
 pub struct Oauth {
     pub google: GoogleOauth,
 }

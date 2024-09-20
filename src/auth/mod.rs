@@ -4,7 +4,7 @@ use anyhow::bail;
 use serde::{Deserialize, Serialize};
 use surrealdb::sql::{Datetime, Thing};
 
-mod oauth;
+pub mod oauth;
 pub mod session;
 pub mod users;
 

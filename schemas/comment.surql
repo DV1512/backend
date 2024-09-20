@@ -1,0 +1,14 @@
+DEFINE TABLE comment SCHEMALESS;
+
+DEFINE FIELD content ON TABLE comment TYPE string;
+DEFINE FIELD created ON TABLE comment TYPE datetime DEFAULT time::now();
+
+-- Create an index for the content field in comment for faster lookup
+DEFINE INDEX comment_content_index ON comment FIELDS content SEARCH ANALYZER post_analyzer BM25 HIGHLIGHTS;
+
+-- Create a foreign key relation between comment and post using post_id
+DEFINE FIELD post_id ON comment TYPE record(post);
+DEFINE FIELD user_id ON comment TYPE record(user);
+
+DEFINE INDEX comment_post_id ON comment FIELDS post_id;
+DEFINE INDEX comment_user_id ON comment FIELDS user_id;

@@ -14,9 +14,10 @@ pub trait Scopes<T> {
     fn scopes(&self) -> Vec<&str>;
 }
 
+#[derive(Debug, Clone)]
 pub struct BasicOauth<T, U>
 where
-    T: Default + Scopes<U>,
+    T: Default + Scopes<U> + Clone,
     String: From<U>,
 {
     pub client: oauth2::basic::BasicClient,
@@ -26,7 +27,7 @@ where
 
 impl<T, U> BasicOauth<T, U>
 where
-    T: Default + Scopes<U>,
+    T: Default + Scopes<U> + Clone,
     String: From<U>,
 {
     pub fn new(
