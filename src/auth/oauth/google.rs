@@ -182,7 +182,11 @@ impl GoogleOauth {
         Ok(session)
     }
 
-    pub async fn exchange_code<C: Connection>(&self, code: String, db: &Arc<Surreal<C>>) -> Result<UserSession> {
+    pub async fn exchange_code<C: Connection>(
+        &self,
+        code: String,
+        db: &Arc<Surreal<C>>,
+    ) -> Result<UserSession> {
         self.exchange_code_internal(code, db).await
     }
 

@@ -1,12 +1,12 @@
 use crate::auth::oauth::provider::{
     OauthProvider, OauthProviderConfig, OauthProviderName, Provider,
 };
+use crate::auth::oauth::scopes::github::GithubScopes;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::env;
 use surrealdb::sql::Thing;
 use tracing::warn;
-use crate::auth::oauth::scopes::github::{GithubScopes};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub(crate) struct GithubProvider {
@@ -24,12 +24,12 @@ impl From<OauthProvider> for GithubProvider {
     }
 }
 
-impl From<GithubProvider> for OauthProvider{
+impl From<GithubProvider> for OauthProvider {
     fn from(v: GithubProvider) -> Self {
-        Self{
-        id: v.id,
-        name: v.name,
-        config: v.config,
+        Self {
+            id: v.id,
+            name: v.name,
+            config: v.config,
         }
     }
 }

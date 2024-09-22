@@ -1,6 +1,5 @@
 use crate::auth::oauth::basic::Scopes;
 
-
 #[derive(Debug, PartialEq, Clone)]
 pub enum GithubScope {
     NoScope,
@@ -47,7 +46,7 @@ impl Default for GithubScope {
 
 impl From<GithubScope> for String {
     fn from(scope: GithubScope) -> Self {
-        match scope{
+        match scope {
             GithubScope::NoScope => "(no scope)".to_string(),
             GithubScope::Repo => "repo".to_string(),
             GithubScope::RepoStatus => "repo:status".to_string(),
@@ -84,12 +83,11 @@ impl From<GithubScope> for String {
             GithubScope::Workflow => "workflow".to_string(),
         }
     }
-
 }
 
 impl From<&GithubScope> for String {
     fn from(scope: &GithubScope) -> Self {
-        match scope{
+        match scope {
             GithubScope::NoScope => "(no scope)".to_string(),
             GithubScope::Repo => "repo".to_string(),
             GithubScope::RepoStatus => "repo:status".to_string(),
@@ -126,12 +124,11 @@ impl From<&GithubScope> for String {
             GithubScope::Workflow => "workflow".to_string(),
         }
     }
-
 }
 
-impl From<GithubScope> for &str{
+impl From<GithubScope> for &str {
     fn from(scope: GithubScope) -> Self {
-        match scope{
+        match scope {
             GithubScope::NoScope => "(no scope)",
             GithubScope::Repo => "repo",
             GithubScope::RepoStatus => "repo:status",
@@ -168,13 +165,11 @@ impl From<GithubScope> for &str{
             GithubScope::Workflow => "workflow",
         }
     }
-
 }
 
-
-impl From<&GithubScope> for &str{
+impl From<&GithubScope> for &str {
     fn from(scope: &GithubScope) -> Self {
-        match scope{
+        match scope {
             GithubScope::NoScope => "(no scope)",
             GithubScope::Repo => "repo",
             GithubScope::RepoStatus => "repo:status",
@@ -212,11 +207,10 @@ impl From<&GithubScope> for &str{
         }
     }
 }
-
 
 impl From<String> for GithubScope {
     fn from(scope: String) -> Self {
-        match scope.as_str(){
+        match scope.as_str() {
             "(no scope)" => GithubScope::NoScope,
             "repo" => GithubScope::Repo,
             "repo:status" => GithubScope::RepoStatus,
@@ -258,7 +252,7 @@ impl From<String> for GithubScope {
 
 impl From<&String> for GithubScope {
     fn from(scope: &String) -> Self {
-        match scope.as_str(){
+        match scope.as_str() {
             "(no scope)" => GithubScope::NoScope,
             "repo" => GithubScope::Repo,
             "repo:status" => GithubScope::RepoStatus,
@@ -294,15 +288,13 @@ impl From<&String> for GithubScope {
             "codes_space" => GithubScope::CodesSpace,
             "workflow" => GithubScope::Workflow,
             _ => GithubScope::NoScope,
-
         }
     }
-
 }
 
 impl From<&str> for GithubScope {
     fn from(scope: &str) -> Self {
-        match scope{
+        match scope {
             "(no scope)" => GithubScope::NoScope,
             "repo" => GithubScope::Repo,
             "repo:status" => GithubScope::RepoStatus,
@@ -338,10 +330,8 @@ impl From<&str> for GithubScope {
             "codes_space" => GithubScope::CodesSpace,
             "workflow" => GithubScope::Workflow,
             _ => GithubScope::NoScope,
-
         }
     }
-
 }
 
 impl From<&str> for &GithubScope {
@@ -382,10 +372,8 @@ impl From<&str> for &GithubScope {
             "codes_space" => &GithubScope::CodesSpace,
             "workflow" => &GithubScope::Workflow,
             _ => &GithubScope::NoScope,
-
         }
     }
-
 }
 impl From<String> for &GithubScope {
     fn from(scope: String) -> Self {
@@ -425,19 +413,14 @@ impl From<String> for &GithubScope {
             "codes_space" => &GithubScope::CodesSpace,
             "workflow" => &GithubScope::Workflow,
             _ => &GithubScope::NoScope,
-
         }
     }
-
 }
-
-
 
 #[derive(Default)]
-pub struct GithubScopes{
+pub struct GithubScopes {
     scopes: Vec<GithubScope>,
 }
-
 
 impl From<Vec<GithubScope>> for GithubScopes {
     fn from(scopes: Vec<GithubScope>) -> Self {
@@ -445,7 +428,7 @@ impl From<Vec<GithubScope>> for GithubScopes {
     }
 }
 
-impl From<GithubScopes> for Vec<String>{
+impl From<GithubScopes> for Vec<String> {
     fn from(scopes: GithubScopes) -> Self {
         scopes.scopes.iter().map(|s| s.into()).collect()
     }
@@ -464,4 +447,3 @@ impl Scopes<GithubScope> for GithubScopes {
         self.scopes.iter().map(|s| s.into()).collect()
     }
 }
-

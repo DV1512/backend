@@ -1,2 +1,2 @@
-pub mod google;
 pub(crate) mod github;
+pub mod google;

@@ -14,11 +14,11 @@ tokio = { version = "1.40", features = ["full", "macros", "rt-multi-thread", "tr
 dotenv = "0.15"
 anyhow = "1.0.86"
 thiserror = "1.0.63"
-tokio-cron-scheduler = "0.11.0"
+tokio-cron-scheduler = "0.13.0"
 tosic-utils = { git = "https://github.com/retrokiller543/tosic-utils.git", features = ["env", "tracing", "surrealdb"] }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 actix-extensible-rate-limit = "0.4.0"
-surrealdb-migrations = { git = "https://github.com/retrokiller543/surrealdb-migrations.git" }
+surrealdb-migrations = { version = "2.0.0" }
 tracing = { version = "0.1.37", features = ["log"] }
 tracing-actix-web = "0.7.12"
 oauth2 = "4.4.2"
@@ -56,6 +56,7 @@ oauth2 = { workspace = true }
 reqwest = { workspace = true }
 chrono = "0.4.38"
 once_cell = { workspace = true }
+futures = "0.3.30"
 
 [features]
 default = ["local"]

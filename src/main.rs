@@ -1,9 +1,14 @@
+use crate::auth::oauth::oauth_service;
+use crate::auth::users::user_service;
 use crate::config::{cors, rate_limiter, rate_limiter_data};
 use crate::init_env::init_env;
 use crate::logging::init_tracing;
+use crate::middlewares::auth::AuthMiddleware;
+use crate::middlewares::logger::LoggingMiddleware;
 use crate::server_error::ServerError;
 use crate::state::{app_state, AppState};
-use actix_web::HttpServer;
+use actix_web::http::StatusCode;
+use actix_web::{get, HttpResponseBuilder, HttpServer, Responder};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use surrealdb::engine::remote::ws::{Client, Ws};
@@ -12,13 +17,12 @@ use surrealdb::Surreal;
 use surrealdb_migrations::MigrationRunner;
 use tracing::{error, info};
 use tracing_actix_web::TracingLogger;
-use crate::auth::oauth::oauth_service;
-use crate::auth::users::user_service;
 
 mod auth;
 mod config;
 mod init_env;
 mod logging;
+mod middlewares;
 mod server_error;
 mod state;
 
@@ -65,9 +69,17 @@ async fn init_internal_db() -> Result<(), ServerError> {
     let namespace = tosic_utils::prelude::env!("SURREALDB_NAMESPACE", "default");
     let database = tosic_utils::prelude::env!("SURREALDB_DATABASE", "default");
 
-    INTERNAL_DB.use_ns(namespace.as_str()).use_db(database.as_str()).await?;
+    INTERNAL_DB
+        .use_ns(namespace.as_str())
+        .use_db(database.as_str())
+        .await?;
 
     Ok(())
+}
+
+#[get("/")]
+async fn health_check() -> impl Responder {
+    HttpResponseBuilder::new(StatusCode::OK).body("OK")
 }
 
 #[actix::main]
@@ -99,14 +111,17 @@ async fn main() -> Result<(), ServerError> {
         let limiter = rate_limiter(rate_limit_backend.clone(), max_requests, limit_duration);
 
         actix_web::App::new()
-            .wrap(cors)
-            .wrap(limiter)
-            .wrap(TracingLogger::default())
             .app_data(state.clone())
+            .wrap(TracingLogger::default()) // this is logging using tracing
+            .wrap(LoggingMiddleware) // this is database logging
+            .wrap(AuthMiddleware) // proof of concept, this should be moved into each individual service we want to secure with auth
             .external_resource("frontend", frontend_url.clone())
             .external_resource("base_url", base_url.clone())
             .service(user_service())
             .service(oauth_service())
+            .service(health_check)
+            .wrap(cors)
+            .wrap(limiter)
     })
     .bind(format!("0.0.0.0:{port}"))?
     .run()

@@ -148,7 +148,10 @@ impl UserSession {
 
     #[tracing::instrument]
     pub(crate) async fn fetch_by_id(id: Thing) -> Option<Self> {
-        let query = Select::query("session").add_condition("id", None, id).add_condition("expires_at", Some(">"), Datetime::default()).set_limit(1);
+        let query = Select::query("session")
+            .add_condition("id", None, id)
+            .add_condition("expires_at", Some(">"), Datetime::default())
+            .set_limit(1);
 
         let session: Option<Self> = match query.run_lazy(&INTERNAL_DB, 0).await {
             Ok(session) => session,
@@ -160,7 +163,10 @@ impl UserSession {
 
     #[tracing::instrument]
     pub(crate) async fn fetch_by_access_token(access_token: String) -> Option<Self> {
-        let query = Select::query("session").add_condition("access_token", None, access_token).add_condition("expires_at", Some(">"), Datetime::default()).set_limit(1);
+        let query = Select::query("session")
+            .add_condition("access_token", None, access_token)
+            .add_condition("expires_at", Some(">"), Datetime::default())
+            .set_limit(1);
 
         let session: Option<Self> = match query.run_lazy(&INTERNAL_DB, 0).await {
             Ok(session) => session,

@@ -16,7 +16,9 @@ pub async fn get_user_by_username<T>(db: &Arc<Surreal<T>>, username: &str) -> Re
 where
     T: surrealdb::Connection,
 {
-    let query = Select::query("user").add_condition("url_safe_username", None, username).set_limit(1);
+    let query = Select::query("user")
+        .add_condition("url_safe_username", None, username)
+        .set_limit(1);
 
     let user: Option<UserInfo> = query.run(db, 0).await?;
 
@@ -34,7 +36,9 @@ pub(crate) async fn get_user_by_email<T>(db: &Arc<Surreal<T>>, email: &str) -> R
 where
     T: surrealdb::Connection,
 {
-    let query = Select::query("user").add_condition("email", None, email).set_limit(1);
+    let query = Select::query("user")
+        .add_condition("email", None, email)
+        .set_limit(1);
 
     let user: Option<UserInfo> = query.run(db, 0).await?;
 

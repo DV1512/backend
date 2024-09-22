@@ -1,10 +1,10 @@
+use crate::auth::oauth::Oauth;
 use crate::server_error::ServerError;
 use crate::INTERNAL_DB;
 use actix_web::web;
 use std::sync::Arc;
 use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::Surreal;
-use crate::auth::oauth::Oauth;
 
 pub struct AppState {
     pub db: Arc<Surreal<Client>>,
@@ -29,7 +29,10 @@ async fn setup_db() -> Result<(), ServerError> {
     let namespace = tosic_utils::prelude::env!("SURREALDB_NAMESPACE", "default");
     let database = tosic_utils::prelude::env!("SURREALDB_DATABASE", "default");
 
-    INTERNAL_DB.use_ns(namespace.as_str()).use_db(database.as_str()).await?;
+    INTERNAL_DB
+        .use_ns(namespace.as_str())
+        .use_db(database.as_str())
+        .await?;
 
     Ok(())
 }
@@ -42,11 +45,12 @@ pub async fn db(ns: &str, db: &str) -> Result<Surreal<Client>, ServerError> {
 
     let database = Surreal::new::<Ws>(db_url).await?;
 
-    database.signin(surrealdb::opt::auth::Root {
-        username: &db_user,
-        password: &db_pass,
-    })
-    .await?;
+    database
+        .signin(surrealdb::opt::auth::Root {
+            username: &db_user,
+            password: &db_pass,
+        })
+        .await?;
 
     database.use_ns(ns).use_db(db).await?;
 

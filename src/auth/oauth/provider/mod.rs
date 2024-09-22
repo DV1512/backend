@@ -1,5 +1,5 @@
-pub mod google;
 mod github;
+pub mod google;
 
 use crate::INTERNAL_DB;
 use anyhow::{bail, Result};
