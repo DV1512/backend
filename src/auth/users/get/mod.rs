@@ -79,7 +79,6 @@ where
         return HttpResponse::BadRequest().body("Missing email or token");
     }
 
-    // if email is present then we use the email to get the user and not the token
     if let Some(email) = &data.email {
         let user = match get_user_by_email(db, email).await {
             Ok(user) => user,

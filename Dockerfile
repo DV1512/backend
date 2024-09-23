@@ -1,11 +1,10 @@
-# Build stage
-FROM rust:1.80-slim AS builder
+ARG PROFILE=release
+ARG BINARY=backend
+
+# Define common build steps
+FROM rust:1.80-slim AS builder-base
 
 RUN rustup default nightly
-
-# Build arguments with default values
-ARG FEATURES
-ARG BUILD_ARGS
 
 # Set the working directory
 WORKDIR /usr/src/app
@@ -13,26 +12,50 @@ WORKDIR /usr/src/app
 # Copy Cargo files to leverage Docker cache
 COPY Cargo.toml Cargo.lock ./
 
-# Copy the actual source code
-COPY . .
+COPY src ./src
 
 # Install build dependencies
-RUN apt-get update && apt-get install -y ca-certificates pkg-config libssl-dev clang
+RUN apt-get update && apt-get install -y ca-certificates pkg-config libssl-dev
 
-# Build the actual application
-RUN cargo build --release ${BUILD_ARGS} $(if [ -n "$FEATURES" ]; then echo "--features $FEATURES"; fi)
+# Build stage for release
+FROM builder-base AS builder-release
 
-# Runtime stage using a minimal base image with ca-certificates
-FROM debian:latest
+# Build arguments with default values
+ARG BUILD_ARGS
+ARG BINARY
+ARG FEATURES
+
+RUN cargo build --release ${BUILD_ARGS} $(if [ -n "$FEATURES" ]; then echo "--features $FEATURES"; fi);
+
+RUN cp /usr/src/app/target/release/${BINARY} .
+
+# Build stage for development
+FROM builder-base AS builder-dev
+
+ARG BUILD_ARGS
+ARG BINARY
+ARG FEATURES
+
+RUN cargo build ${BUILD_ARGS} $(if [ -n "$FEATURES" ]; then echo "--features $FEATURES"; fi);
+
+RUN cp /usr/src/app/target/debug/${BINARY} .
+
+# final build stage
+FROM builder-${PROFILE} AS builder
+
+# Runtime stage - modify this to fit the application
+FROM debian:latest AS runtime
+
+ARG BINARY
 
 # Installs the required OpenSSL shared library file "libssl.so.3"
-RUN apt-get update && apt-get install libssl3
+RUN apt-get update && apt-get install -y libssl3
 
 # Set the working directory
 WORKDIR /usr/src/app
 
-# Copy the compiled binary from the builder stage
-COPY --from=builder /usr/src/app/target/release/backend .
+# Copy the binary from the builder stage
+COPY --from=builder /usr/src/app/${BINARY} ./app
 
 # Copy necessary directories
 COPY events events
@@ -46,4 +69,4 @@ ENV PORT=9999
 EXPOSE $PORT
 
 # Set the entrypoint to the application binary
-CMD ["./backend"]
+CMD ["./app"]

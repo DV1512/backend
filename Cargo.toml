@@ -3,7 +3,7 @@ members = ["."]
 
 [workspace.dependencies]
 actix = "0.13.5"
-actix-web-actors = "4.3.0"
+actix-ws = "0.3.0"
 actix-web = "4.0"
 actix-cors = "0.7.0"
 api-forge = { git = "https://github.com/retrokiller543/api-forge.git", features = ["native"] }
@@ -33,7 +33,7 @@ description = "Backend for the TOSIC project"
 
 [dependencies]
 actix = { workspace = true }
-actix-web-actors = { workspace = true }
+actix-ws = { workspace = true }
 actix-web = { workspace = true }
 actix-cors = { workspace = true }
 api-forge = { workspace = true }
@@ -63,6 +63,13 @@ default = ["local"]
 local = []
 production = []
 
+# use with `cargo build --profile release-dev` for faster builds that are stil optimized
+[profile.release-dev]
+inherits = "release"
+lto = false
+codegen-units = 16
+
+# use this when actually releasing the app for best performance
 [profile.release]
 lto = true
 codegen-units = 1
