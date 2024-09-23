@@ -25,6 +25,9 @@ RUN cargo build --release ${BUILD_ARGS} $(if [ -n "$FEATURES" ]; then echo "--fe
 # Runtime stage using a minimal base image with ca-certificates
 FROM debian:latest
 
+# Installs the required OpenSSL shared library file "libssl.so.3"
+RUN apt-get update && apt-get install libssl3
+
 # Set the working directory
 WORKDIR /usr/src/app
 
