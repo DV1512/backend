@@ -53,7 +53,7 @@ where
             // Access response status code
             let status = res.status();
 
-            // TODO: Implement your logging logic here
+            // TODO: Implement database logging logic here
             // You can access:
             // - Method: method
             // - Path: path

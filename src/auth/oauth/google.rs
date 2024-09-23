@@ -203,7 +203,7 @@ impl GoogleOauth {
 
         /* Ok(GetGoogleUserInfo::default().send_and_parse(&user_info_url, None, Some((access_token.to_string(), None))).await?) */
 
-        let req_builder = GetGoogleUserInfo::default();
+        let req_builder = GetGoogleUserInfo;
 
         let response = req_builder
             .send_request(&user_info_url, None, Some((access_token.to_owned(), None)))

@@ -1,7 +1,8 @@
 use crate::auth::oauth::basic::Scopes;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub enum GithubScope {
+    #[default]
     NoScope,
     Repo,
     RepoStatus,
@@ -36,12 +37,6 @@ pub enum GithubScope {
     ReadGpgKey,
     CodesSpace,
     Workflow,
-}
-
-impl Default for GithubScope {
-    fn default() -> Self {
-        GithubScope::NoScope
-    }
 }
 
 impl From<GithubScope> for String {
