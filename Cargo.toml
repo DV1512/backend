@@ -13,7 +13,7 @@ tokio = { version = "1.40", features = ["full", "macros", "rt-multi-thread", "tr
 dotenv = "0.15"
 anyhow = "1.0.86"
 thiserror = "1.0.63"
-tokio-cron-scheduler = "0.11.0"
+tokio-cron-scheduler = "0.11.1"
 tosic-utils = { git = "https://github.com/retrokiller543/tosic-utils.git", features = ["surrealdb", "env", "tracing"]}
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 actix-extensible-rate-limit = "0.4.0"
