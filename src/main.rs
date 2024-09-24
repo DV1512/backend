@@ -78,7 +78,7 @@ async fn init_internal_db() -> Result<(), ServerError> {
     Ok(())
 }
 
-#[get("/")]
+#[get("/health")]
 async fn health_check() -> impl Responder {
     HttpResponseBuilder::new(StatusCode::OK).body("OK")
 }
@@ -126,7 +126,7 @@ async fn main() -> Result<(), ServerError> {
             .app_data(state.clone())
             .wrap(TracingLogger::default()) // this is logging using tracing
             .wrap(logger) // this is database logging
-            .wrap(AuthMiddleware) // proof of concept, this should be moved into each individual service we want to secure with auth
+            //.wrap(AuthMiddleware) // proof of concept, this should be moved into each individual service we want to secure with auth
             .external_resource("frontend", frontend_url.clone())
             .external_resource("base_url", base_url.clone())
             .service(user_service())
@@ -136,6 +136,7 @@ async fn main() -> Result<(), ServerError> {
             .wrap(limiter)
     })
     .bind(format!("0.0.0.0:{port}"))?
+    .bind(format!("[::1]:{port}"))?
     .run()
     .await?;
 
