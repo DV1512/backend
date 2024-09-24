@@ -14,7 +14,8 @@ use oauth2::TokenResponse;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::sync::Arc;
-use surrealdb::sql::Datetime;
+//use surrealdb::sql::Datetime;
+use crate::models::datetime::Datetime;
 use surrealdb::{Connection, Surreal};
 use tracing::{debug, error, info};
 
@@ -154,7 +155,7 @@ impl GoogleOauth {
             }
             Some(existing_user) => {
                 if let Some(id) = existing_user.id {
-                    Record { id }
+                    Record { id: id.into() }
                 } else {
                     bail!("No ID found for user");
                 }
@@ -215,6 +216,11 @@ impl GoogleOauth {
     }
 }
 
+#[utoipa::path(
+    responses(
+        (status = 302, description = "Redirect to Google login page"),
+    )
+)]
 #[get("/login")]
 pub async fn google_login(state: web::Data<AppState>) -> impl Responder {
     info!("Redirecting to Google login page");
@@ -227,6 +233,13 @@ pub async fn google_login(state: web::Data<AppState>) -> impl Responder {
         .finish()
 }
 
+#[utoipa::path(
+    params(OAuthCallbackQuery),
+    responses(
+        (status = 200, description = "Google callback"),
+        (status = 500, description = "Internal server error", body = String, example = json!("Error exchanging code: ..."))
+    )
+)]
 #[get("/callback")]
 pub async fn google_callback(
     query: web::Query<OAuthCallbackQuery>,

@@ -8,6 +8,7 @@ use actix_web::{web, Scope};
 use anyhow::Result;
 pub use google::GoogleOauth;
 use serde::Deserialize;
+use utoipa::{IntoParams, OpenApi};
 
 #[derive(Debug, Clone)]
 pub struct Oauth {
@@ -27,8 +28,16 @@ pub fn oauth_service() -> Scope {
 }
 
 #[allow(dead_code)]
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, IntoParams)]
 struct OAuthCallbackQuery {
+    #[param(example = "code123")]
     code: String,
+    #[param(example = "state123")]
     state: String,
 }
+
+use google::*;
+
+#[derive(OpenApi)]
+#[openapi(paths(google_login, google_callback), components())]
+pub struct OauthApi;

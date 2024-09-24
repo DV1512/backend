@@ -7,6 +7,7 @@ use crate::middlewares::auth::AuthMiddleware;
 use crate::middlewares::logger::{LogEntry, LoggingMiddleware};
 use crate::server_error::ServerError;
 use crate::state::{app_state, AppState};
+use crate::swagger::ApiDoc;
 use actix_web::http::StatusCode;
 use actix_web::{get, HttpResponseBuilder, HttpServer, Responder};
 use once_cell::sync::Lazy;
@@ -18,14 +19,20 @@ use surrealdb_migrations::MigrationRunner;
 use tokio::sync::mpsc;
 use tracing::{error, info};
 use tracing_actix_web::TracingLogger;
+use utoipa::OpenApi;
+use utoipa_rapidoc::RapiDoc;
+use utoipa_scalar::{Scalar, Servable};
+use utoipa_swagger_ui::SwaggerUi;
 
 mod auth;
 mod config;
 mod init_env;
 mod logging;
 mod middlewares;
+mod models;
 mod server_error;
 mod state;
+mod swagger;
 
 static INTERNAL_DB: Lazy<Surreal<Client>> = Lazy::new(Surreal::init);
 
@@ -78,8 +85,13 @@ async fn init_internal_db() -> Result<(), ServerError> {
     Ok(())
 }
 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Health check endpoint", body = String)
+    )
+)]
 #[get("/health")]
-async fn health_check() -> impl Responder {
+pub async fn health_check() -> impl Responder {
     HttpResponseBuilder::new(StatusCode::OK).body("OK")
 }
 
@@ -102,7 +114,7 @@ async fn main() -> Result<(), ServerError> {
     let base_url = tosic_utils::prelude::env!("BASE_URL", "http://localhost:9999");
 
     let (rate_limit_backend, max_requests, limit_duration) =
-        rate_limiter_data(("LIMIT", "10"), ("LIMIT_DURATION", "60"));
+        rate_limiter_data(("LIMIT", "100"), ("LIMIT_DURATION", "30"));
 
     let state = app_state().await?;
 
@@ -115,6 +127,8 @@ async fn main() -> Result<(), ServerError> {
             info!("{:?}", log)
         }
     });
+
+    let openapi = ApiDoc::openapi();
 
     info!("Setting up server on port {}", port);
     HttpServer::new(move || {
@@ -132,6 +146,11 @@ async fn main() -> Result<(), ServerError> {
             .service(user_service())
             .service(oauth_service())
             .service(health_check)
+            .service(
+                SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
+            )
+            .service(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
+            .service(Scalar::with_url("/scalar", openapi.clone()))
             .wrap(cors)
             .wrap(limiter)
     })
