@@ -6,14 +6,17 @@ use crate::auth::oauth::OAuthCallbackQuery;
 use crate::auth::users::create::create_user;
 use crate::auth::users::get_user;
 use crate::auth::{create_auth_for_user, session::UserSession, Role, UserInfo};
-use crate::{AppState, Record};
-use actix_web::{get, web, HttpRequest, HttpResponse, Responder, Scope};
+use crate::{health_check, AppState, Record};
+use actix_web::{get, HttpRequest, HttpResponse, Responder};
 use anyhow::{bail, Result};
 use api_forge::{ApiRequest, Request};
 use oauth2::TokenResponse;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::sync::Arc;
+use actix_web::web::{Data, Query};
+use apistos::{api_operation, web};
+use apistos::web::Scope;
 use surrealdb::sql::Datetime;
 use surrealdb::{Connection, Surreal};
 use tracing::{debug, error, info};
@@ -215,8 +218,12 @@ impl GoogleOauth {
     }
 }
 
-#[get("/login")]
-pub async fn google_login(state: web::Data<AppState>) -> impl Responder {
+#[api_operation(
+    tag = "oauth",
+    summary = "Login with Google",
+    description = r###"Begin the oauth flow for google"###,
+)]
+pub async fn google_login(state: Data<AppState>) -> impl Responder {
     info!("Redirecting to Google login page");
     let oauth = state.oauth.clone();
 
@@ -227,10 +234,14 @@ pub async fn google_login(state: web::Data<AppState>) -> impl Responder {
         .finish()
 }
 
-#[get("/callback")]
+#[api_operation(
+    tag = "oauth",
+    summary = "Callback for Google Oauth",
+    description = r###"Callback for Google Oauth"###,
+)]
 pub async fn google_callback(
-    query: web::Query<OAuthCallbackQuery>,
-    state: web::Data<AppState>,
+    query: Query<OAuthCallbackQuery>,
+    state: Data<AppState>,
     req: HttpRequest,
 ) -> impl Responder {
     info!("Google callback received");
@@ -261,6 +272,6 @@ pub async fn google_callback(
 
 pub fn google_oauth_service() -> Scope {
     web::scope("/google")
-        .service(google_login)
-        .service(google_callback)
+        .service(web::resource("/login").route(web::get().to(google_login)))
+        .service(web::resource("/callback").route(web::get().to(google_callback)))
 }

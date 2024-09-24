@@ -4,8 +4,10 @@ pub(crate) mod provider;
 mod scopes;
 
 use crate::auth::oauth::google::google_oauth_service;
-use actix_web::{web, Scope};
 use anyhow::Result;
+use apistos::ApiComponent;
+use apistos::web::{self, Scope};
+use schemars::JsonSchema;
 pub use google::GoogleOauth;
 use serde::Deserialize;
 
@@ -27,7 +29,7 @@ pub fn oauth_service() -> Scope {
 }
 
 #[allow(dead_code)]
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, ApiComponent, JsonSchema)]
 struct OAuthCallbackQuery {
     code: String,
     state: String,

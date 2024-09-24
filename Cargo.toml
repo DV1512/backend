@@ -57,6 +57,9 @@ reqwest = { workspace = true }
 chrono = "0.4.38"
 once_cell = { workspace = true }
 futures = "0.3.30"
+schemars = { package = "apistos-schemars", version = "0.8" }
+apistos = { version =  "0.4", features = ["actix-web-grants", "swagger-ui"] }
+apistos-plugins = "0.4.0"
 
 [features]
 default = ["local"]

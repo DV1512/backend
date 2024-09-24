@@ -2,10 +2,12 @@ mod auth;
 pub(crate) mod create;
 pub(crate) mod get;
 
+use apistos::web;
+use apistos::web::Scope;
 pub(crate) use self::get::get_user;
 use self::get::get_user_by;
-use actix_web::{web, Scope};
+
 
 pub fn user_service() -> Scope {
-    web::scope("/user").service(get_user_by)
+    web::scope("/user").service(web::resource("").route(web::get().to(get_user_by)))
 }

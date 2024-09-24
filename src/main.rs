@@ -8,7 +8,9 @@ use crate::middlewares::logger::{LogEntry, LoggingMiddleware};
 use crate::server_error::ServerError;
 use crate::state::{app_state, AppState};
 use actix_web::http::StatusCode;
-use actix_web::{get, HttpResponseBuilder, HttpServer, Responder};
+use actix_web::{get, guard, http, HttpResponse, HttpResponseBuilder, HttpServer, Responder};
+use apistos::{api_operation, web, SwaggerUIConfig};
+use apistos::app::OpenApiWrapper;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use surrealdb::engine::remote::ws::{Client, Ws};
@@ -18,6 +20,8 @@ use surrealdb_migrations::MigrationRunner;
 use tokio::sync::mpsc;
 use tracing::{error, info};
 use tracing_actix_web::TracingLogger;
+use apistos_plugins::ui::{UIPlugin, UIPluginConfig};
+use oauth2::HttpRequest;
 
 mod auth;
 mod config;
@@ -26,6 +30,7 @@ mod logging;
 mod middlewares;
 mod server_error;
 mod state;
+mod spec;
 
 static INTERNAL_DB: Lazy<Surreal<Client>> = Lazy::new(Surreal::init);
 
@@ -78,9 +83,21 @@ async fn init_internal_db() -> Result<(), ServerError> {
     Ok(())
 }
 
-#[get("/health")]
-async fn health_check() -> impl Responder {
-    HttpResponseBuilder::new(StatusCode::OK).body("OK")
+//#[get("/health")]
+#[api_operation(
+    tag = "health",
+    summary = "Health check",
+    description = r###"Checks the health of the API"###,
+    operation_id = "health_check",
+)]
+async fn health_check() -> impl Responder { HttpResponse::Ok() }
+
+#[api_operation(skip)]
+pub(crate) async fn swagger() -> impl Responder {
+    let swagger = Box::new(SwaggerUIConfig::new(&"/swagger")).build("/openapi.json");
+    HttpResponseBuilder::new(StatusCode::OK)
+        .content_type("text/html; charset=utf-8")
+        .body(swagger.to_html())
 }
 
 #[actix::main]
@@ -121,8 +138,10 @@ async fn main() -> Result<(), ServerError> {
         let cors = cors();
         let limiter = rate_limiter(rate_limit_backend.clone(), max_requests, limit_duration);
         let logger = LoggingMiddleware::new(log_sender.clone());
+        let spec = spec::api_spec();
 
         actix_web::App::new()
+            .document(spec)
             .app_data(state.clone())
             .wrap(TracingLogger::default()) // this is logging using tracing
             .wrap(logger) // this is database logging
@@ -131,9 +150,11 @@ async fn main() -> Result<(), ServerError> {
             .external_resource("base_url", base_url.clone())
             .service(user_service())
             .service(oauth_service())
-            .service(health_check)
+            .service(web::resource("/health").route(web::get().to(health_check)))
+            .service(web::resource("/swagger").route(web::get().to(swagger)))
             .wrap(cors)
             .wrap(limiter)
+            .build("/openapi.json")
     })
     .bind(format!("0.0.0.0:{port}"))?
     .bind(format!("[::1]:{port}"))?

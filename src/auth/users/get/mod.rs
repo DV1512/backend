@@ -7,6 +7,8 @@ use actix_web::{get, web, HttpResponse, Responder};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use apistos::{api_operation, ApiComponent};
+use schemars::JsonSchema;
 use surrealdb::Surreal;
 use tosic_utils::{Select, Statement};
 use tracing::{error, info};
@@ -57,7 +59,7 @@ where
     get_user_by_email(db, email).await.ok()
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ApiComponent, JsonSchema)]
 pub struct GetUserBy {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
@@ -118,7 +120,12 @@ where
     }
 }
 
-#[get("/by")]
+#[api_operation(
+    tag = "user",
+    summary = "Get users",
+    description = r###"Get users by a filter"###,
+    error_code = 404
+)]
 pub(crate) async fn get_user_by(
     data: web::Query<GetUserBy>,
     state: web::Data<AppState>,
