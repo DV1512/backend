@@ -1,15 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::ops::{Deref, DerefMut};
-use utoipa::ToSchema;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialOrd, Eq, PartialEq, Default)]
 pub struct Datetime(surrealdb::sql::Datetime);
-
-impl Datetime {
-    pub fn new() -> Self {
-        Datetime(surrealdb::sql::Datetime::default())
-    }
-}
 
 impl Deref for Datetime {
     type Target = surrealdb::sql::Datetime;

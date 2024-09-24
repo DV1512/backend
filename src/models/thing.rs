@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use std::ops::{Deref, DerefMut};
-use utoipa::ToSchema;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialOrd, Eq, PartialEq)]
 pub struct Thing(surrealdb::sql::Thing);
@@ -19,7 +18,7 @@ impl DerefMut for Thing {
     }
 }
 
-use utoipa::openapi::{self, schema::ObjectBuilder, SchemaFormat};
+use utoipa::openapi::{self, schema::ObjectBuilder};
 
 impl<'__s> utoipa::ToSchema<'__s> for Thing {
     fn schema() -> (&'__s str, openapi::RefOr<openapi::schema::Schema>) {

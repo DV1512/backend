@@ -2,7 +2,6 @@ use crate::auth::oauth::provider::{OauthProvider, OauthProviderName};
 use crate::{PaginationResponse, Record, INTERNAL_DB};
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 //use surrealdb::sql::{Datetime, Thing};
 use crate::models::datetime::Datetime;
 use crate::models::thing::Thing;
@@ -45,6 +44,7 @@ pub struct UserInfo {
 }
 
 #[derive(ToResponse)]
+#[allow(dead_code)]
 pub enum UserInfoExampleResponses {
     #[response(examples(
         ("JohnDoe" = (value = json!({

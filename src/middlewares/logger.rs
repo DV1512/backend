@@ -10,6 +10,7 @@ use tokio::sync::mpsc::Sender;
 use tracing::error;
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct LogEntry {
     pub method: Method,
     pub path: String,

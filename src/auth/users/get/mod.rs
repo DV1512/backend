@@ -10,7 +10,7 @@ use std::sync::Arc;
 use surrealdb::Surreal;
 use tosic_utils::{Select, Statement};
 use tracing::{error, info};
-use utoipa::{IntoParams, ToSchema};
+use utoipa::IntoParams;
 
 #[tracing::instrument(skip(db))]
 pub async fn get_user_by_username<T>(db: &Arc<Surreal<T>>, username: &str) -> Result<UserInfo>
