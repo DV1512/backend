@@ -1,0 +1,11 @@
+DEFINE EVENT IF NOT EXISTS delete_related_auth_on_user_deletion ON TABLE user
+    WHEN $before != NONE AND $after == NONE
+THEN {
+    RETURN "this should not run right";
+    LET $user = $before;
+    LET $user_auth = (SELECT <-auth_for<-user_auth FROM user WHERE id == $user.id);
+    LET $relations = (SELECT <-auth_for FROM user WHERE id == $user.id);
+
+    DELETE $relations;
+    DELETE $user_auth;
+};

@@ -3,34 +3,40 @@ members = ["."]
 
 [workspace.dependencies]
 actix = "0.13.5"
-actix-web-actors = "4.3.0"
+actix-ws = "0.3.0"
 actix-web = "4.0"
 actix-cors = "0.7.0"
+api-forge = { git = "https://github.com/retrokiller543/api-forge.git", features = ["native"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-surrealdb = { version = "1.5.5" }
+surrealdb = { version = "2.0.1" }
 tokio = { version = "1.40", features = ["full", "macros", "rt-multi-thread", "tracing"] }
 dotenv = "0.15"
 anyhow = "1.0.86"
 thiserror = "1.0.63"
-tokio-cron-scheduler = "0.11.0"
-tosic-utils = { git = "https://github.com/retrokiller543/tosic-utils.git", features = ["surrealdb", "env", "tracing"]}
+tokio-cron-scheduler = "0.13.0"
+tosic-utils = { git = "https://github.com/retrokiller543/tosic-utils.git", features = ["env", "tracing", "surrealdb"] }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 actix-extensible-rate-limit = "0.4.0"
-surrealdb-migrations = { version =  "1.5.0" }
+surrealdb-migrations = { version = "2.0.0" }
 tracing = { version = "0.1.37", features = ["log"] }
 tracing-actix-web = "0.7.12"
+oauth2 = "4.4.2"
+reqwest = "0.12.7"
+once_cell = "1.19.0"
 
 [package]
 name = "backend"
 version = "0.1.0"
 edition = "2021"
+description = "Backend for the TOSIC project"
 
 [dependencies]
 actix = { workspace = true }
-actix-web-actors = { workspace = true }
+actix-ws = { workspace = true }
 actix-web = { workspace = true }
 actix-cors = { workspace = true }
+api-forge = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 surrealdb = { workspace = true }
@@ -46,8 +52,24 @@ surrealdb-migrations = { workspace = true }
 tracing = { workspace = true }
 tracing-actix-web = { workspace = true }
 tracing-core = "0.1.32"
+oauth2 = { workspace = true }
+reqwest = { workspace = true }
+chrono = "0.4.38"
+once_cell = { workspace = true }
+futures = "0.3.30"
 
 [features]
 default = ["local"]
 local = []
 production = []
+
+# use with `cargo build --profile release-dev` for faster builds that are stil optimized
+[profile.release-dev]
+inherits = "release"
+lto = false
+codegen-units = 16
+
+# use this when actually releasing the app for best performance
+[profile.release]
+lto = true
+codegen-units = 1
