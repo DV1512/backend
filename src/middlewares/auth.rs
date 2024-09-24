@@ -46,6 +46,7 @@ where
 
     forward_ready!(service);
 
+    #[tracing::instrument(skip(self, req), name = "AuthMiddleware")]
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let service = self.service.clone();
         let fut = async move {

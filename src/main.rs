@@ -4,7 +4,7 @@ use crate::config::{cors, rate_limiter, rate_limiter_data};
 use crate::init_env::init_env;
 use crate::logging::init_tracing;
 use crate::middlewares::auth::AuthMiddleware;
-use crate::middlewares::logger::LoggingMiddleware;
+use crate::middlewares::logger::{LogEntry, LoggingMiddleware};
 use crate::server_error::ServerError;
 use crate::state::{app_state, AppState};
 use actix_web::http::StatusCode;
@@ -15,6 +15,7 @@ use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::sql::Thing;
 use surrealdb::Surreal;
 use surrealdb_migrations::MigrationRunner;
+use tokio::sync::mpsc;
 use tracing::{error, info};
 use tracing_actix_web::TracingLogger;
 
@@ -105,15 +106,26 @@ async fn main() -> Result<(), ServerError> {
 
     let state = app_state().await?;
 
+    let (log_sender, mut log_receiver) = mpsc::channel::<LogEntry>(100);
+
+    tokio::spawn(async move {
+        while let Some(log) = log_receiver.recv().await {
+            // TODO: database logging
+            // this is to not make a network call to the database for every request immediately and instead make it happen in the background
+            info!("{:?}", log)
+        }
+    });
+
     info!("Setting up server on port {}", port);
     HttpServer::new(move || {
         let cors = cors();
         let limiter = rate_limiter(rate_limit_backend.clone(), max_requests, limit_duration);
+        let logger = LoggingMiddleware::new(log_sender.clone());
 
         actix_web::App::new()
             .app_data(state.clone())
             .wrap(TracingLogger::default()) // this is logging using tracing
-            .wrap(LoggingMiddleware) // this is database logging
+            .wrap(logger) // this is database logging
             .wrap(AuthMiddleware) // proof of concept, this should be moved into each individual service we want to secure with auth
             .external_resource("frontend", frontend_url.clone())
             .external_resource("base_url", base_url.clone())
