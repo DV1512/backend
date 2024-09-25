@@ -39,5 +39,5 @@ struct OAuthCallbackQuery {
 use google::*;
 
 #[derive(OpenApi)]
-#[openapi(paths(google_login, google_callback), components())]
+#[openapi(paths(google_login), components())]
 pub struct OauthApi;

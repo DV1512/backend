@@ -7,8 +7,13 @@ use crate::middlewares::logger::{LogEntry, LoggingMiddleware};
 use crate::server_error::ServerError;
 use crate::state::{app_state, AppState};
 use crate::swagger::ApiDoc;
-use actix_web::http::StatusCode;
-use actix_web::{get, HttpResponseBuilder, HttpServer, Responder};
+use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
+use actix_extensible_rate_limit::backend::{SimpleInputFuture, SimpleOutput};
+use actix_extensible_rate_limit::RateLimiter;
+use actix_web::dev::ServiceRequest;
+use actix_web::middleware::NormalizePath;
+use actix_web::{get, web, HttpResponse, HttpServer, Responder};
+use api_forge::{ApiRequest, Request};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use surrealdb::engine::remote::ws::{Client, Ws};
@@ -18,10 +23,12 @@ use surrealdb_migrations::MigrationRunner;
 use tokio::sync::mpsc;
 use tracing::{error, info};
 use tracing_actix_web::TracingLogger;
-use utoipa::OpenApi;
+use utoipa::openapi::OpenApi;
+use utoipa::OpenApi as OpenApiTrait;
 use utoipa_rapidoc::RapiDoc;
-use utoipa_scalar::{Scalar, Servable};
-use utoipa_swagger_ui::SwaggerUi;
+use utoipa_redoc::{Redoc, Servable};
+use utoipa_scalar::{Scalar, Servable as OtherServable};
+use utoipa_swagger_ui::{Config, SwaggerUi};
 
 mod auth;
 mod config;
@@ -86,12 +93,77 @@ async fn init_internal_db() -> Result<(), ServerError> {
 
 #[utoipa::path(
     responses(
-        (status = 200, description = "Health check endpoint", body = String)
-    )
+        (status = 200, description = "Health check endpoint", body = String),
+        (status = 424, description = "Database not responding", body = String),
+    ),
+    tag = "health",
 )]
 #[get("/health")]
 pub async fn health_check() -> impl Responder {
-    HttpResponseBuilder::new(StatusCode::OK).body("OK")
+    #[derive(Request, Serialize, Debug)]
+    #[request(endpoint = "/health")]
+    struct DbHealthCheck;
+
+    let request = DbHealthCheck;
+
+    let mut url = tosic_utils::prelude::env!("SURREALDB_URL");
+
+    if !url.starts_with("http://") || !url.starts_with("https://") {
+        url = format!("http://{}", url);
+    }
+
+    if let Err(err) = request.send_request(url.as_str(), None, None).await {
+        error!("Database not responding, error: {}", err);
+
+        HttpResponse::FailedDependency().body("Database not responding")
+    } else {
+        HttpResponse::Ok().body("Ok")
+    }
+}
+
+fn v1_endpoints(
+    limiter: RateLimiter<
+        InMemoryBackend,
+        SimpleOutput,
+        impl Fn(&ServiceRequest) -> SimpleInputFuture + Sized + 'static,
+    >,
+    logger: LoggingMiddleware,
+) -> impl actix_web::dev::HttpServiceFactory {
+    web::scope("/v1")
+        .wrap(TracingLogger::default()) // this is logging using tracing
+        .wrap(logger) // this is database logging
+        .service(user_service())
+        .service(oauth_service())
+        .wrap(limiter)
+        .wrap(NormalizePath::default())
+}
+
+fn api(
+    limiter: RateLimiter<
+        InMemoryBackend,
+        SimpleOutput,
+        impl Fn(&ServiceRequest) -> SimpleInputFuture + Sized + 'static,
+    >,
+    logger: LoggingMiddleware,
+    openapi: OpenApi,
+) -> impl actix_web::dev::HttpServiceFactory {
+    web::scope("/api")
+        .service(v1_endpoints(limiter, logger))
+        .service(docs(openapi))
+}
+
+fn docs(openapi: OpenApi) -> impl actix_web::dev::HttpServiceFactory {
+    let config = Config::from("/api/docs/openapi.json");
+
+    web::scope("/docs")
+        .service(Redoc::with_url("/redoc", openapi.clone()))
+        .service(
+            SwaggerUi::new("/swagger/{_:.*}")
+                .url("/openapi.json", openapi.clone())
+                .config(config),
+        )
+        .service(RapiDoc::new("/api/docs/openapi.json").path("/rapidoc"))
+        .service(Scalar::with_url("/scalar", openapi.clone()))
 }
 
 #[actix::main]
@@ -137,21 +209,12 @@ async fn main() -> Result<(), ServerError> {
 
         actix_web::App::new()
             .app_data(state.clone())
-            .wrap(TracingLogger::default()) // this is logging using tracing
-            .wrap(logger) // this is database logging
             //.wrap(AuthMiddleware) // proof of concept, this should be moved into each individual service we want to secure with auth
             .external_resource("frontend", frontend_url.clone())
             .external_resource("base_url", base_url.clone())
-            .service(user_service())
-            .service(oauth_service())
             .service(health_check)
-            .service(
-                SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
-            )
-            .service(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
-            .service(Scalar::with_url("/scalar", openapi.clone()))
+            .service(api(limiter, logger, openapi.clone()))
             .wrap(cors)
-            .wrap(limiter)
     })
     .bind(format!("0.0.0.0:{port}"))?
     .bind(format!("[::1]:{port}"))?

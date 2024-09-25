@@ -128,9 +128,10 @@ use crate::auth::UserInfoExampleResponses;
     responses(
         (status = 200, response = UserInfoExampleResponses),
         (status = 404, description = "User not found"),
-    )
+    ),
+    tag = "user",
 )]
-#[get("/")]
+#[get("")]
 pub(crate) async fn get_user_by(
     data: web::Query<GetUserBy>,
     state: web::Data<AppState>,

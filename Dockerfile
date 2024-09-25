@@ -15,7 +15,7 @@ COPY Cargo.toml Cargo.lock ./
 COPY src ./src
 
 # Install build dependencies
-RUN apt-get update && apt-get install -y ca-certificates pkg-config libssl-dev
+RUN apt-get update && apt-get install -y ca-certificates pkg-config libssl-dev curl
 
 # Build stage for release
 FROM builder-base AS builder-release
