@@ -121,6 +121,7 @@ pub async fn health_check() -> impl Responder {
     }
 }
 
+/// All v1 API endpoints
 fn v1_endpoints(
     limiter: RateLimiter<
         InMemoryBackend,
@@ -138,6 +139,7 @@ fn v1_endpoints(
         .wrap(NormalizePath::default())
 }
 
+/// All API endpoints
 fn api(
     limiter: RateLimiter<
         InMemoryBackend,
@@ -152,6 +154,7 @@ fn api(
         .service(docs(openapi))
 }
 
+/// Only real reason we have this is to be able to put scoped middlewares for the docs, for example we can add auth middleware to secure the docs
 fn docs(openapi: OpenApi) -> impl actix_web::dev::HttpServiceFactory {
     let config = Config::from("/api/docs/openapi.json");
 
