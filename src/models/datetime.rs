@@ -1,24 +1,11 @@
 use serde::{Deserialize, Serialize};
-use std::ops::{Deref, DerefMut};
-
-#[derive(Debug, Serialize, Deserialize, Clone, PartialOrd, Eq, PartialEq, Default)]
-pub struct Datetime(surrealdb::sql::Datetime);
-
-impl Deref for Datetime {
-    type Target = surrealdb::sql::Datetime;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for Datetime {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
+use tosic_utils::utils::wrap_external::wrap_external_type;
 use utoipa::openapi::{self, schema::ObjectBuilder, SchemaFormat};
+
+wrap_external_type! {
+    #[derive(Debug, Serialize, Deserialize, Clone, PartialOrd, Eq, PartialEq, Default)]
+    pub struct Datetime(surrealdb::sql::Datetime);
+}
 
 impl<'__s> utoipa::ToSchema<'__s> for Datetime {
     fn schema() -> (&'__s str, openapi::RefOr<openapi::schema::Schema>) {

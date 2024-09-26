@@ -29,7 +29,10 @@ macro_rules! version_prefix {
     };
 }
 
-version_prefix!(AddV1Prefix, "v1");
+version_prefix! {
+    AddV1Prefix,
+    "v1"
+}
 
 struct NormalizePath;
 
