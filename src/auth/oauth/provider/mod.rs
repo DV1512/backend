@@ -1,4 +1,4 @@
-mod github;
+pub(crate) mod github;
 pub mod google;
 
 use crate::INTERNAL_DB;

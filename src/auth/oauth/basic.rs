@@ -4,15 +4,7 @@ use oauth2::{
 };
 use std::marker::PhantomData;
 use tracing::debug;
-
-pub trait Scopes<T> {
-    fn add_scope(self, scope: T) -> Self;
-
-    #[allow(dead_code)]
-    fn remove_scope(self, scope: T) -> Self;
-
-    fn scopes(&self) -> Vec<&str>;
-}
+use crate::auth::oauth::scopes::Scopes;
 
 #[derive(Debug, Clone)]
 pub struct BasicOauth<T, U>

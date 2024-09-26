@@ -12,7 +12,6 @@ pub mod session;
 pub mod users;
 
 #[derive(Debug, Serialize, Deserialize, PartialOrd, Eq, PartialEq, Clone, Default, ToSchema)]
-#[serde(rename_all = "lowercase")]
 pub enum Role {
     Owner,
     Admin,
@@ -76,7 +75,7 @@ pub(crate) struct Users {
 }
 
 #[tracing::instrument(skip(password))]
-async fn create_auth_for_user(
+pub(crate) async fn create_auth_for_user(
     user_id: Record,
     providers: Vec<OauthProvider>,
     password: Option<String>,
