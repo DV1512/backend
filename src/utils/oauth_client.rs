@@ -24,7 +24,7 @@ macro_rules! define_oauth_client {
         }
 
         #[derive(Debug, Default, Clone, serde::Serialize, api_forge::Request)]
-        #[request(endpoint = "", response_type = $user_info_type, authentication = Bearer)] // Adjust authentication type as needed
+        #[request(endpoint = "", response_type = $user_info_type, authentication = Bearer)]
         struct GetUserInfoRequest;
 
         impl $oauth_struct {

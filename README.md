@@ -25,11 +25,13 @@ There are several versions of the documentation can be found according to the ve
 Documentation endpoints that do not include a version number are global documentation and include all endpoints for all versions.
 
 - `/api/docs/swagger/` - Swagger UI
+- `/api/docs/scalar/` - Scalar UI
 - `/api/docs/redoc/` - Redoc UI
 - `/api/docs/rapidoc/` - RapiDoc UI
 - `/api/docs/openapi.json` - OpenAPI Spec
 
 - `/api/docs/v1/swagger/` - Swagger UI
+- `/api/docs/v1/scalar/` - Scalar UI
 - `/api/docs/v1/redoc/` - Redoc UI
 - `/api/docs/v1/rapidoc/` - RapiDoc UI
 - `/api/docs/v1/openapi.json` - OpenAPI Spec

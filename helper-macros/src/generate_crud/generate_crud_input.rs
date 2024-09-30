@@ -1,12 +1,12 @@
-use proc_macro2::TokenStream as TokenStream2;
-use syn::{Attribute, Ident, ItemStruct, LitStr, Token};
+use syn::{Ident, ItemStruct, LitStr, Token};
 use syn::parse::{Parse, ParseStream};
-use syn::punctuated::Punctuated;
 use crate::generate_crud::crud_operation::CrudOperation;
 
+
+#[derive(Clone)]
 pub(crate) struct GenerateCrudInput {
-    struct_def: ItemStruct,
-    pub(crate) table_name: LitStr,
+    pub(crate) struct_def: ItemStruct,
+    pub(crate) base_path: LitStr,
     pub(crate) create_op: Option<CrudOperation>,
     pub(crate) read_op: Option<CrudOperation>,
     pub(crate) update_op: Option<CrudOperation>,
@@ -18,13 +18,12 @@ impl Parse for GenerateCrudInput {
         // Parse the struct definition
         let struct_def: ItemStruct = input.parse()?;
 
-        // Expect 'table:' keyword
-        let table_ident: Ident = input.parse()?;
-        if table_ident != "table" {
-            return Err(syn::Error::new_spanned(table_ident, "Expected 'table' keyword"));
+        let path_ident = input.parse::<Ident>()?;
+        if path_ident != "path" {
+            return Err(syn::Error::new_spanned(path_ident, "Expected 'path' keyword"));
         }
         input.parse::<Token![:]>()?;
-        let table_name: LitStr = input.parse()?;
+        let base_path: LitStr = input.parse()?;
         input.parse::<Token![,]>()?;
 
         // Initialize CRUD operations as None
@@ -64,7 +63,7 @@ impl Parse for GenerateCrudInput {
 
         Ok(GenerateCrudInput {
             struct_def,
-            table_name,
+            base_path,
             create_op,
             read_op,
             update_op,

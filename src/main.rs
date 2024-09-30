@@ -41,7 +41,6 @@ mod models;
 mod server_error;
 mod state;
 mod swagger;
-mod test;
 mod utils;
 
 static INTERNAL_DB: Lazy<Surreal<Client>> = Lazy::new(Surreal::init);

@@ -1,4 +1,5 @@
-use proc_macro::TokenStream;
+use proc_macro2::TokenStream;
+use proc_macro::TokenStream as TokenStream1;
 use quote::quote;
 use syn::punctuated::Punctuated;
 use syn::{
@@ -6,8 +7,10 @@ use syn::{
     parse_macro_input, Attribute, Block, Ident, LitStr, Token, Type,
 };
 
-pub(crate) fn generate_endpoint_internal(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as GenerateEndpointInput);
+pub(crate) fn generate_endpoint_internal(input: TokenStream) -> TokenStream1 {
+    let input: TokenStream1 = input.into();
+
+    let input = parse_macro_input!(input as GenerateEndpointInput).into();
 
     let GenerateEndpointInput {
         attrs,
@@ -46,14 +49,6 @@ pub(crate) fn generate_endpoint_internal(input: TokenStream) -> TokenStream {
         quote! {}
     };
 
-    // Extract parameter names for calling the function
-    let param_names = if let Some(params) = params {
-        let names = params.iter().map(|p| &p.name);
-        quote! { , #( #names ),* }
-    } else {
-        quote! {}
-    };
-
     // Generate the function
     let expanded = quote! {
         #(#attrs)*
@@ -65,7 +60,7 @@ pub(crate) fn generate_endpoint_internal(input: TokenStream) -> TokenStream {
         #fn_block
     };
 
-    TokenStream::from(expanded)
+    TokenStream1::from(expanded)
 }
 
 pub(crate) struct GenerateEndpointInput {
