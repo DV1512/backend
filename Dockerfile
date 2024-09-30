@@ -15,7 +15,7 @@ COPY Cargo.toml Cargo.lock ./
 COPY src ./src
 
 # Install build dependencies
-RUN apt-get update && apt-get install -y ca-certificates pkg-config libssl-dev
+RUN apt-get update && apt-get install -y ca-certificates pkg-config libssl-dev curl
 
 # Build stage for release
 FROM builder-base AS builder-release
@@ -64,7 +64,7 @@ COPY schemas schemas
 COPY .env.local .env.local
 COPY .env.production .env.production
 
-# Expose the port (default to 8080)
+# Expose the port (default to 9999)
 ENV PORT=9999
 EXPOSE $PORT
 

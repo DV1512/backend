@@ -10,6 +10,7 @@ use std::sync::Arc;
 use surrealdb::Surreal;
 use tosic_utils::{Select, Statement};
 use tracing::{error, info};
+use utoipa::IntoParams;
 
 #[tracing::instrument(skip(db))]
 pub async fn get_user_by_username<T>(db: &Arc<Surreal<T>>, username: &str) -> Result<UserInfo>
@@ -57,13 +58,15 @@ where
     get_user_by_email(db, email).await.ok()
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, IntoParams)]
 pub struct GetUserBy {
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[param(example = "johndoe")]
     pub username: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[param(example = "johndoe@example.com")]
     pub email: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[param(example = "token123")]
     pub token: Option<String>,
 }
 
@@ -118,7 +121,17 @@ where
     }
 }
 
-#[get("/by")]
+use crate::auth::UserInfoExampleResponses;
+
+#[utoipa::path(
+    params(GetUserBy),
+    responses(
+        (status = 200, response = UserInfoExampleResponses),
+        (status = 404, description = "User not found"),
+    ),
+    tag = "user",
+)]
+#[get("")]
 pub(crate) async fn get_user_by(
     data: web::Query<GetUserBy>,
     state: web::Data<AppState>,

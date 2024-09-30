@@ -2,32 +2,68 @@ use crate::auth::oauth::provider::{OauthProvider, OauthProviderName};
 use crate::{PaginationResponse, Record, INTERNAL_DB};
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
-use surrealdb::sql::{Datetime, Thing};
+//use surrealdb::sql::{Datetime, Thing};
+use crate::models::datetime::Datetime;
+use crate::models::thing::Thing;
+use utoipa::{ToResponse, ToSchema};
 
 pub mod oauth;
 pub mod session;
 pub mod users;
 
-#[derive(Debug, Serialize, Deserialize, PartialOrd, Eq, PartialEq, Clone, Default)]
-pub(crate) enum Role {
+#[derive(Debug, Serialize, Deserialize, PartialOrd, Eq, PartialEq, Clone, Default, ToSchema)]
+pub enum Role {
     Owner,
     Admin,
     #[default]
     User,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialOrd, Eq, PartialEq, Clone)]
-pub(crate) struct UserInfo {
-    pub(crate) id: Option<Thing>,
-    pub(crate) email: String,
-    pub(crate) url_safe_username: String,
-    pub(crate) username: String,
-    pub(crate) first_name: String,
-    pub(crate) last_name: String,
-    pub(crate) created_at: Datetime,
-    pub(crate) last_login: Option<Datetime>,
-    pub(crate) picture: Option<String>,
-    pub(crate) role: Role,
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema, PartialOrd, Eq, PartialEq)]
+pub struct UserInfo {
+    #[schema(example = "user:123456")]
+    pub id: Option<Thing>,
+    #[schema(example = "johndoe@example.com")]
+    pub email: String,
+    #[schema(example = "johndoe")]
+    pub url_safe_username: String,
+    #[schema(example = "John Doe")]
+    pub username: String,
+    #[schema(example = "John")]
+    pub first_name: String,
+    #[schema(example = "Doe")]
+    pub last_name: String,
+    #[schema(example = "2021-09-15T14:28:23Z")]
+    pub created_at: Datetime,
+    #[schema(example = "2021-09-15T14:28:23Z")]
+    pub last_login: Option<Datetime>,
+    #[schema(example = "https://example.com/avatar.jpg")]
+    pub picture: Option<String>,
+    pub role: Role,
+}
+
+#[derive(ToResponse)]
+#[allow(dead_code)]
+pub enum UserInfoExampleResponses {
+    #[response(examples(
+        ("JohnDoe" = (value = json!({
+            "id": {
+                "id": "5f4d0c8f-1b78-4e3f-9d0c-0b0d0b0b0b0b",
+                "tb": "user",
+            },
+            "email": "johndoe@example.com",
+            "url_safe_username": "johndoe",
+            "username": "John Doe",
+            "first_name": "John",
+            "last_name": "Doe",
+            "created_at": "2021-09-15T14:28:23Z",
+            "last_login": "2021-09-15T14:28:23Z",
+            "picture": "https://example.com/avatar.jpg",
+            "role": "Owner",
+         }
+         )))
+    ))]
+    User(#[content("application/json")] UserInfo),
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialOrd, Eq, PartialEq, Clone)]
@@ -39,23 +75,14 @@ pub(crate) struct Users {
 }
 
 #[tracing::instrument(skip(password))]
-async fn create_auth_for_user(
+pub(crate) async fn create_auth_for_user(
     user_id: Record,
     providers: Vec<OauthProvider>,
     password: Option<String>,
 ) -> anyhow::Result<()> {
-    let mut require_password = false;
-    let providers_ids = providers
-        .iter()
-        .map(|p| p.id.clone())
-        .collect::<Vec<Thing>>();
+    let require_password = providers.iter().any(|p| p.name == OauthProviderName::Email);
+    let providers_ids = providers.iter().map(|p| p.id.clone()).collect::<Vec<_>>();
     let user_id = user_id.id;
-
-    for provider in providers {
-        if provider.name == OauthProviderName::Email {
-            require_password = true;
-        }
-    }
 
     if require_password && password.is_none() {
         bail!("User requires password. Please provide one.");

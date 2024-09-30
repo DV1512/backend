@@ -1,14 +1,21 @@
+#![feature(async_closure)]
+
 use crate::auth::oauth::oauth_service;
 use crate::auth::users::user_service;
 use crate::config::{cors, rate_limiter, rate_limiter_data};
 use crate::init_env::init_env;
 use crate::logging::init_tracing;
-use crate::middlewares::auth::AuthMiddleware;
 use crate::middlewares::logger::{LogEntry, LoggingMiddleware};
 use crate::server_error::ServerError;
 use crate::state::{app_state, AppState};
-use actix_web::http::StatusCode;
-use actix_web::{get, HttpResponseBuilder, HttpServer, Responder};
+use crate::swagger::{ApiDocs, DocsV1};
+use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
+use actix_extensible_rate_limit::backend::{SimpleInputFuture, SimpleOutput};
+use actix_extensible_rate_limit::RateLimiter;
+use actix_web::dev::ServiceRequest;
+use actix_web::middleware::NormalizePath;
+use actix_web::{get, web, HttpResponse, HttpServer, Responder};
+use api_forge::{ApiRequest, Request};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use surrealdb::engine::remote::ws::{Client, Ws};
@@ -18,14 +25,24 @@ use surrealdb_migrations::MigrationRunner;
 use tokio::sync::mpsc;
 use tracing::{error, info};
 use tracing_actix_web::TracingLogger;
+use utoipa::OpenApi as OpenApiTrait;
+use utoipa_rapidoc::RapiDoc;
+use utoipa_redoc::{Redoc, Servable};
+use utoipa_scalar::{Scalar, Servable as OtherServable};
+use utoipa_swagger_ui::{Config, SwaggerUi};
 
 mod auth;
 mod config;
+mod error;
 mod init_env;
 mod logging;
 mod middlewares;
+mod models;
 mod server_error;
 mod state;
+mod swagger;
+mod test;
+mod utils;
 
 static INTERNAL_DB: Lazy<Surreal<Client>> = Lazy::new(Surreal::init);
 
@@ -78,9 +95,99 @@ async fn init_internal_db() -> Result<(), ServerError> {
     Ok(())
 }
 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Health check endpoint", body = String),
+        (status = 424, description = "Database not responding", body = String),
+    ),
+    tag = "health",
+)]
 #[get("/health")]
-async fn health_check() -> impl Responder {
-    HttpResponseBuilder::new(StatusCode::OK).body("OK")
+pub async fn health_check() -> impl Responder {
+    #[derive(Request, Serialize, Debug)]
+    #[request(endpoint = "/health")]
+    struct DbHealthCheck;
+
+    let request = DbHealthCheck;
+
+    let mut url = tosic_utils::prelude::env!("SURREALDB_URL");
+
+    if !url.starts_with("http://") || !url.starts_with("https://") {
+        url = format!("http://{}", url);
+    }
+
+    if let Err(err) = request.send_request(url.as_str(), None, None).await {
+        error!("Database not responding, error: {}", err);
+
+        HttpResponse::FailedDependency().body("Database not responding")
+    } else {
+        HttpResponse::Ok().body("Ok")
+    }
+}
+
+/// All v1 API endpoints
+fn v1_endpoints(
+    limiter: RateLimiter<
+        InMemoryBackend,
+        SimpleOutput,
+        impl Fn(&ServiceRequest) -> SimpleInputFuture + Sized + 'static,
+    >,
+    logger: LoggingMiddleware,
+) -> impl actix_web::dev::HttpServiceFactory {
+    web::scope("/v1")
+        .wrap(TracingLogger::default()) // this is logging using tracing
+        .wrap(logger) // this is database logging
+        .service(user_service())
+        .service(oauth_service())
+        .wrap(limiter)
+        .wrap(NormalizePath::default())
+}
+
+/// All API endpoints
+fn api(
+    limiter: RateLimiter<
+        InMemoryBackend,
+        SimpleOutput,
+        impl Fn(&ServiceRequest) -> SimpleInputFuture + Sized + 'static,
+    >,
+    logger: LoggingMiddleware,
+) -> impl actix_web::dev::HttpServiceFactory {
+    web::scope("/api")
+        .service(v1_endpoints(limiter, logger))
+        .service(docs())
+}
+
+/// Documentation for only the v1 API. This does not include the docs for non `/api/v1` endpoints as that is done in `docs`
+fn v1_docs() -> impl actix_web::dev::HttpServiceFactory {
+    let openapi = DocsV1::openapi();
+    let config = Config::from("/api/docs/v1/openapi.json");
+
+    web::scope("/v1")
+        .service(Redoc::with_url("/redoc", openapi.clone()))
+        .service(
+            SwaggerUi::new("/swagger/{_:.*}")
+                .url("/openapi.json", openapi.clone())
+                .config(config),
+        )
+        .service(RapiDoc::new("/api/docs/v1/openapi.json").path("/rapidoc"))
+        .service(Scalar::with_url("/scalar", openapi.clone()))
+}
+
+/// Only real reason we have this is to be able to put scoped middlewares for the docs, for example we can add auth middleware to secure the docs
+fn docs() -> impl actix_web::dev::HttpServiceFactory {
+    let openapi = ApiDocs::openapi();
+    let config = Config::from("/api/docs/openapi.json");
+
+    web::scope("/docs")
+        .service(Redoc::with_url("/redoc", openapi.clone()))
+        .service(
+            SwaggerUi::new("/swagger/{_:.*}")
+                .url("/openapi.json", openapi.clone())
+                .config(config),
+        )
+        .service(RapiDoc::new("/api/docs/openapi.json").path("/rapidoc"))
+        .service(Scalar::with_url("/scalar", openapi.clone()))
+        .service(v1_docs())
 }
 
 #[actix::main]
@@ -102,7 +209,7 @@ async fn main() -> Result<(), ServerError> {
     let base_url = tosic_utils::prelude::env!("BASE_URL", "http://localhost:9999");
 
     let (rate_limit_backend, max_requests, limit_duration) =
-        rate_limiter_data(("LIMIT", "10"), ("LIMIT_DURATION", "60"));
+        rate_limiter_data(("LIMIT", "100"), ("LIMIT_DURATION", "30"));
 
     let state = app_state().await?;
 
@@ -124,16 +231,12 @@ async fn main() -> Result<(), ServerError> {
 
         actix_web::App::new()
             .app_data(state.clone())
-            .wrap(TracingLogger::default()) // this is logging using tracing
-            .wrap(logger) // this is database logging
             //.wrap(AuthMiddleware) // proof of concept, this should be moved into each individual service we want to secure with auth
             .external_resource("frontend", frontend_url.clone())
             .external_resource("base_url", base_url.clone())
-            .service(user_service())
-            .service(oauth_service())
             .service(health_check)
+            .service(api(limiter, logger))
             .wrap(cors)
-            .wrap(limiter)
     })
     .bind(format!("0.0.0.0:{port}"))?
     .bind(format!("[::1]:{port}"))?

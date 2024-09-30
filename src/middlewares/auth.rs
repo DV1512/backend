@@ -1,54 +1,24 @@
 use crate::auth::users::get::utils::get_user_by_token;
 use crate::auth::UserInfo;
+use crate::utils::middleware::define_middleware;
 use crate::AppState;
-use actix_web::dev::forward_ready;
 use actix_web::web::Data;
-use actix_web::{
-    dev::{Service, ServiceRequest, ServiceResponse, Transform},
-    Error, HttpMessage,
-};
-use futures::future::{ok, LocalBoxFuture, Ready};
-use std::sync::Arc;
+use actix_web::{dev::ServiceRequest, HttpMessage};
 use tracing::error;
 
-pub struct AuthMiddleware;
-
-impl<S, B> Transform<S, ServiceRequest> for AuthMiddleware
-where
-    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
-    B: 'static,
-{
-    type Response = S::Response;
-    type Error = S::Error;
-    type Transform = AuthMiddlewareService<S>;
-    type InitError = ();
-    type Future = Ready<Result<Self::Transform, Self::InitError>>;
-
-    fn new_transform(&self, service: S) -> Self::Future {
-        ok(AuthMiddlewareService {
-            service: Arc::new(service),
-        })
-    }
-}
-
-pub struct AuthMiddlewareService<S> {
-    service: Arc<S>,
-}
-
-impl<S, B> Service<ServiceRequest> for AuthMiddlewareService<S>
-where
-    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
-    B: 'static,
-{
-    type Response = S::Response;
-    type Error = S::Error;
-    type Future = LocalBoxFuture<'static, Result<Self::Response, Self::Error>>;
-
-    forward_ready!(service);
-
-    #[tracing::instrument(skip(self, req), name = "AuthMiddleware")]
-    fn call(&self, req: ServiceRequest) -> Self::Future {
-        let service = self.service.clone();
+define_middleware! {
+    /// Middleware for authenticating requests
+    ///
+    /// The middleware will check if the request contains an API key or an access token and authenticate the user if it exists
+    ///
+    /// ## Important Headers
+    ///
+    /// - `Authorization: Bearer <token>`
+    /// - `X-Api-Key: <key>`
+    pub struct AuthMiddleware {},
+    pub struct AuthMiddlewareService;
+    |this: &AuthMiddlewareService<S>, req: ServiceRequest| {
+        let service = this.service.clone();
         let fut = async move {
             // Access AppState
             let app_state = req

@@ -32,6 +32,7 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       PORT: 9999
+      RUST_LOG: info
     ports:
       - "9998:9999"
     depends_on:
