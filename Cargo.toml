@@ -1,5 +1,5 @@
 [workspace]
-members = ["."]
+members = [".", "helper-macros"]
 
 [workspace.dependencies]
 actix = "0.13.5"
@@ -16,6 +16,7 @@ anyhow = "1.0.86"
 thiserror = "1.0.63"
 tokio-cron-scheduler = "0.13.0"
 tosic-utils = { git = "https://github.com/retrokiller543/tosic-utils.git", features = ["env", "tracing", "surrealdb"] }
+surrealdb-abstraction = { git = "https://github.com/retrokiller543/tosic-utils.git" }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 actix-extensible-rate-limit = "0.4.0"
 surrealdb-migrations = { version = "2.0.0" }
@@ -62,6 +63,8 @@ utoipa-swagger-ui = { version = "7.1.1-beta.0", features = ["actix-web"] }
 utoipa-redoc = { version = "4.0.1-beta.0", features = ["actix-web"] }
 utoipa-rapidoc = { version = "4.0.1-beta.0", features = ["actix-web"] }
 utoipa-scalar = { version = "0.2.0-beta.0", features = ["actix-web"] }
+surrealdb-abstraction = { workspace = true }
+helper-macros = { path = "helper-macros" }
 
 [features]
 default = ["local"]

@@ -1,17 +1,17 @@
 pub mod basic;
+pub mod error;
+pub mod github;
 pub mod google;
 pub(crate) mod provider;
 pub(crate) mod scopes;
-pub mod github;
-pub mod error;
 
+use crate::auth::oauth::github::{github_oauth_service, GithubOauth};
 use crate::auth::oauth::google::google_oauth_service;
 use actix_web::{web, Scope};
 use anyhow::Result;
 pub use google::GoogleOauth;
 use serde::Deserialize;
 use utoipa::{IntoParams, OpenApi};
-use crate::auth::oauth::github::{github_oauth_service, GithubOauth};
 
 #[derive(Debug, Clone)]
 pub struct Oauth {
@@ -29,7 +29,9 @@ impl Oauth {
 }
 
 pub fn oauth_service() -> Scope {
-    web::scope("/oauth").service(google_oauth_service()).service(github_oauth_service())
+    web::scope("/oauth")
+        .service(google_oauth_service())
+        .service(github_oauth_service())
 }
 
 #[allow(dead_code)]
@@ -41,8 +43,8 @@ struct OAuthCallbackQuery {
     state: String,
 }
 
-use google::*;
 use github::__path_login as __path_github_login;
+use google::*;
 
 #[derive(OpenApi)]
 #[openapi(paths(google_login, github_login), components())]

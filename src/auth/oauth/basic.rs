@@ -1,10 +1,10 @@
+use crate::auth::oauth::scopes::Scopes;
 use anyhow::Result;
 use oauth2::{
     AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, RedirectUrl, Scope, TokenUrl,
 };
 use std::marker::PhantomData;
 use tracing::debug;
-use crate::auth::oauth::scopes::Scopes;
 
 #[derive(Debug, Clone)]
 pub struct BasicOauth<T, U>

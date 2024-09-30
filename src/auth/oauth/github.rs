@@ -1,53 +1,52 @@
-use actix_web::{get, web, HttpRequest, HttpResponse, Responder, Scope};
-use serde::{Deserialize, Serialize};
-use tracing::{error, info};
-use crate::auth::{Role, UserInfo};
+use super::provider::github::GithubProvider;
+use super::scopes::github::{GithubScope, GithubScopes};
 use crate::auth::oauth::error::OauthError;
 use crate::auth::oauth::OAuthCallbackQuery;
+use crate::auth::{Role, UserInfo};
 use crate::models::datetime::Datetime;
 use crate::state::AppState;
 use crate::utils::oauth_client::define_oauth_client;
-use super::provider::github::GithubProvider;
-use super::scopes::github::{GithubScope, GithubScopes};
+use actix_web::{get, web, HttpRequest, HttpResponse, Responder, Scope};
+use serde::{Deserialize, Serialize};
+use tracing::{error, info};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 struct GithubUserInfo {
-	login: String,
-	id: i32,
-	node_id: String,
-	avatar_url: String,
-	gravatar_id: String,
-	url: String,
-	html_url: String,
-	followers_url: String,
-	following_url: String,
-	gists_url: String,
-	starred_url: String,
-	subscriptions_url: String,
-	organizations_url: String,
-	repos_url: String,
-	events_url: String,
-	received_events_url: String,
+    login: String,
+    id: i32,
+    node_id: String,
+    avatar_url: String,
+    gravatar_id: String,
+    url: String,
+    html_url: String,
+    followers_url: String,
+    following_url: String,
+    gists_url: String,
+    starred_url: String,
+    subscriptions_url: String,
+    organizations_url: String,
+    repos_url: String,
+    events_url: String,
+    received_events_url: String,
     #[serde(rename = "type")]
-	root_type: String,
-	site_admin: bool,
-	name: Option<String>,
+    root_type: String,
+    site_admin: bool,
+    name: Option<String>,
     company: Option<String>,
-	blog: String,
-	location: String,
+    blog: String,
+    location: String,
     email: Option<String>,
-	hireable: bool,
+    hireable: bool,
     bio: Option<String>,
     twitter_username: Option<String>,
     notification_email: Option<String>,
-	public_repos: i32,
-	public_gists: i32,
-	followers: i32,
-	following: i32,
-	created_at: String,
-	updated_at: String,
+    public_repos: i32,
+    public_gists: i32,
+    followers: i32,
+    following: i32,
+    created_at: String,
+    updated_at: String,
 }
-
 
 define_oauth_client!(
     GithubOauth,
@@ -135,7 +134,5 @@ pub async fn callback(
 }
 
 pub fn github_oauth_service() -> Scope {
-    web::scope("/github")
-        .service(login)
-        .service(callback)
+    web::scope("/github").service(login).service(callback)
 }

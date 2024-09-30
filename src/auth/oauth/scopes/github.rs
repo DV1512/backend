@@ -1,6 +1,6 @@
 use crate::utils::scope::define_scopes;
 
-define_scopes!{
+define_scopes! {
     GithubScopes;
     GithubScope {
         NoScope => "(no scope)",

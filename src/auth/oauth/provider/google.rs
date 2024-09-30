@@ -1,8 +1,8 @@
 use crate::auth::oauth::provider::OauthProviderName;
 use crate::auth::oauth::scopes::google::{GoogleScope, GoogleScopes};
+use crate::utils::provider::define_provider;
 use serde::{Deserialize, Serialize};
 use tracing::warn;
-use crate::utils::provider::define_provider;
 
 define_provider! {
     GoogleProvider;

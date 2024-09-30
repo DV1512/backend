@@ -66,13 +66,11 @@ macro_rules! define_oauth_client {
             }
 
             #[tracing::instrument(skip(self, code, db))]
-            async fn exchange_code_internal<T>(
+            async fn exchange_code_internal<C: surrealdb::Connection>(
                 &self,
                 code: String,
-                db: &::std::sync::Arc<surrealdb::Surreal<T>>,
+                db: &::std::sync::Arc<surrealdb::Surreal<C>>,
             ) -> Result<crate::auth::session::UserSession, crate::auth::oauth::error::OauthError>
-            where
-                T: surrealdb::Connection,
             {
                 let token = self.basic.exchange_code_for_token(code).await?;
 

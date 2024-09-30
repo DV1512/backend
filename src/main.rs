@@ -1,3 +1,5 @@
+#![feature(async_closure)]
+
 use crate::auth::oauth::oauth_service;
 use crate::auth::users::user_service;
 use crate::config::{cors, rate_limiter, rate_limiter_data};
@@ -31,6 +33,7 @@ use utoipa_swagger_ui::{Config, SwaggerUi};
 
 mod auth;
 mod config;
+mod error;
 mod init_env;
 mod logging;
 mod middlewares;
@@ -38,6 +41,7 @@ mod models;
 mod server_error;
 mod state;
 mod swagger;
+mod test;
 mod utils;
 
 static INTERNAL_DB: Lazy<Surreal<Client>> = Lazy::new(Surreal::init);

@@ -64,7 +64,7 @@ COPY schemas schemas
 COPY .env.local .env.local
 COPY .env.production .env.production
 
-# Expose the port (default to 8080)
+# Expose the port (default to 9999)
 ENV PORT=9999
 EXPOSE $PORT
 
