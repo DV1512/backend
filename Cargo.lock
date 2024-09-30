@@ -4502,7 +4502,7 @@ dependencies = [
 [[package]]
 name = "surrealdb-abstraction"
 version = "0.2.0"
-source = "git+https://github.com/retrokiller543/tosic-utils.git#cdcdcf5aa8df2319102fb8986fbe24f98bafdc31"
+source = "git+https://github.com/retrokiller543/tosic-utils.git#c9067b30e9739bd3eed91cdb58a75efe870d9e67"
 dependencies = [
  "anyhow",
  "log",
@@ -4987,12 +4987,12 @@ dependencies = [
 [[package]]
 name = "tosic-env-utils"
 version = "0.1.0"
-source = "git+https://github.com/retrokiller543/tosic-utils.git#cdcdcf5aa8df2319102fb8986fbe24f98bafdc31"
+source = "git+https://github.com/retrokiller543/tosic-utils.git#c9067b30e9739bd3eed91cdb58a75efe870d9e67"
 
 [[package]]
 name = "tosic-logging-utils"
 version = "0.1.0"
-source = "git+https://github.com/retrokiller543/tosic-utils.git#cdcdcf5aa8df2319102fb8986fbe24f98bafdc31"
+source = "git+https://github.com/retrokiller543/tosic-utils.git#c9067b30e9739bd3eed91cdb58a75efe870d9e67"
 dependencies = [
  "tracing",
  "tracing-subscriber",
@@ -5001,7 +5001,7 @@ dependencies = [
 [[package]]
 name = "tosic-utils"
 version = "0.2.0"
-source = "git+https://github.com/retrokiller543/tosic-utils.git#cdcdcf5aa8df2319102fb8986fbe24f98bafdc31"
+source = "git+https://github.com/retrokiller543/tosic-utils.git#c9067b30e9739bd3eed91cdb58a75efe870d9e67"
 dependencies = [
  "surrealdb-abstraction",
  "tosic-env-utils",
@@ -5492,7 +5492,7 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
