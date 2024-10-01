@@ -9,6 +9,8 @@ RUN rustup default nightly
 # Set the working directory
 WORKDIR /usr/src/app
 
+COPY helper-macros ./helper-macros
+
 # Copy Cargo files to leverage Docker cache
 COPY Cargo.toml Cargo.lock ./
 
