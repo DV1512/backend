@@ -74,12 +74,12 @@ pub struct GetUserBy {
 pub(crate) async fn get_user_by_internal<T>(
     db: &Arc<Surreal<T>>,
     data: &GetUserBy,
-) -> impl Responder
+) -> Result<impl Responder, ServerResponseError>
 where
     T: surrealdb::Connection,
 {
     if data.email.is_none() && data.token.is_none() && data.username.is_none() {
-        return HttpResponse::BadRequest().body("Missing email or token");
+        return Err(ServerResponseError::BadRequest("No data provided".to_string()));
     }
 
     if let Some(email) = &data.email {
@@ -87,11 +87,12 @@ where
             Ok(user) => user,
             Err(e) => {
                 error!("Failed to get user by email: {:?}", e);
-                return HttpResponse::NotFound().body("User not found");
+
+                return Err(ServerResponseError::NotFound);
             }
         };
 
-        return HttpResponse::Ok().json(user);
+        return Ok(HttpResponse::Ok().json(user));
     }
 
     if let Some(username) = &data.username {
@@ -99,11 +100,12 @@ where
             Ok(user) => user,
             Err(e) => {
                 error!("Failed to get user by username: {:?}", e);
-                return HttpResponse::NotFound().body("User not found");
+
+                return Err(ServerResponseError::NotFound);
             }
         };
 
-        return HttpResponse::Ok().json(user);
+        return Ok(HttpResponse::Ok().json(user));
     }
 
     if let Some(token) = &data.token {
@@ -111,17 +113,19 @@ where
             Ok(user) => user,
             Err(e) => {
                 error!("Failed to get user by token: {:?}", e);
-                return HttpResponse::NotFound().body("User not found");
+
+                return Err(ServerResponseError::NotFound);
             }
         };
 
-        HttpResponse::Ok().json(user)
+        Ok(HttpResponse::Ok().json(user))
     } else {
-        HttpResponse::BadRequest().body("Missing email or token")
+        Err(ServerResponseError::BadRequest("No data provided".to_string()))
     }
 }
 
 use crate::auth::UserInfoExampleResponses;
+use crate::error::ServerResponseError;
 
 #[utoipa::path(
     params(GetUserBy),
@@ -135,7 +139,7 @@ use crate::auth::UserInfoExampleResponses;
 pub(crate) async fn get_user_by(
     data: web::Query<GetUserBy>,
     state: web::Data<AppState>,
-) -> impl Responder {
+) -> Result<impl Responder, ServerResponseError> {
     let data = data.into_inner();
     let db = &state.db;
     get_user_by_internal(db, &data).await

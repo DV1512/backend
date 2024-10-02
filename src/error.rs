@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
 
@@ -13,6 +15,8 @@ pub enum ServerResponseError {
     InternalError(String),
     #[error("Not found")]
     NotFound,
+    #[error("Bad request: {0}")]
+    BadRequest(String),
 }
 
 impl ResponseError for ServerResponseError {
@@ -23,6 +27,7 @@ impl ResponseError for ServerResponseError {
             ServerResponseError::InternalError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ServerResponseError::QueryError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ServerResponseError::NotFound => StatusCode::NOT_FOUND,
+            ServerResponseError::BadRequest(_) => StatusCode::BAD_REQUEST,
         }
     }
 
