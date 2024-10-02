@@ -1,7 +1,6 @@
 #![cfg(test)]
 
 use proc_macro2::{Ident, Span};
-use quote::quote;
 use syn::__private::TokenStream2;
 use syn::parse_quote;
 use crate::generate_crud::crud_operation::{CrudOperation, OperationType};

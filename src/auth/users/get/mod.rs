@@ -93,7 +93,6 @@ where
             }
         };
 
-        // Convert the `UserInfo` to `UserInfoDTO`
         let user_dto: UserInfoDTO = user.into();
         return Ok(HttpResponse::Ok().json(user_dto));
     }
@@ -108,7 +107,6 @@ where
             }
         };
 
-        // Convert the `UserInfo` to `UserInfoDTO`
         let user_dto: UserInfoDTO = user.into();
         return Ok(HttpResponse::Ok().json(user_dto));
     }
@@ -123,7 +121,6 @@ where
             }
         };
 
-        // Convert the `UserInfo` to `UserInfoDTO`
         let user_dto: UserInfoDTO = user.into();
         Ok(HttpResponse::Ok().json(user_dto))
     } else {
