@@ -2,6 +2,7 @@ pub(crate) mod utils;
 
 use crate::auth::users::get::utils::get_user_by_token;
 use crate::auth::UserInfo;
+use crate::dto::UserInfoDTO;
 use crate::AppState;
 use actix_web::{get, web, HttpResponse, Responder};
 use anyhow::Result;
@@ -70,6 +71,8 @@ pub struct GetUserBy {
     pub token: Option<String>,
 }
 
+// start of new code
+
 #[tracing::instrument(skip(db, data))]
 pub(crate) async fn get_user_by_internal<T>(
     db: &Arc<Surreal<T>>,
@@ -91,7 +94,9 @@ where
             }
         };
 
-        return HttpResponse::Ok().json(user);
+        // Convert the `UserInfo` to `UserInfoDTO`
+        let user_dto: UserInfoDTO = user.into();
+        return HttpResponse::Ok().json(user_dto);
     }
 
     if let Some(username) = &data.username {
@@ -103,7 +108,9 @@ where
             }
         };
 
-        return HttpResponse::Ok().json(user);
+        // Convert the `UserInfo` to `UserInfoDTO`
+        let user_dto: UserInfoDTO = user.into();
+        return HttpResponse::Ok().json(user_dto);
     }
 
     if let Some(token) = &data.token {
@@ -115,11 +122,15 @@ where
             }
         };
 
-        HttpResponse::Ok().json(user)
+        // Convert the `UserInfo` to `UserInfoDTO`
+        let user_dto: UserInfoDTO = user.into();
+        return HttpResponse::Ok().json(user_dto);
     } else {
         HttpResponse::BadRequest().body("Missing email or token")
     }
 }
+
+// end of new code
 
 use crate::auth::UserInfoExampleResponses;
 
