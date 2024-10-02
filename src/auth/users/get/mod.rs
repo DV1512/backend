@@ -2,6 +2,7 @@ pub(crate) mod utils;
 
 use crate::auth::users::get::utils::get_user_by_token;
 use crate::auth::UserInfo;
+use crate::dto::UserInfoDTO;
 use crate::AppState;
 use actix_web::{get, web, HttpResponse, Responder};
 use anyhow::Result;
@@ -92,7 +93,9 @@ where
             }
         };
 
-        return Ok(HttpResponse::Ok().json(user));
+        // Convert the `UserInfo` to `UserInfoDTO`
+        let user_dto: UserInfoDTO = user.into();
+        return Ok(HttpResponse::Ok().json(user_dto));
     }
 
     if let Some(username) = &data.username {
@@ -105,7 +108,9 @@ where
             }
         };
 
-        return Ok(HttpResponse::Ok().json(user));
+        // Convert the `UserInfo` to `UserInfoDTO`
+        let user_dto: UserInfoDTO = user.into();
+        return Ok(HttpResponse::Ok().json(user_dto));
     }
 
     if let Some(token) = &data.token {
@@ -118,7 +123,9 @@ where
             }
         };
 
-        Ok(HttpResponse::Ok().json(user))
+        // Convert the `UserInfo` to `UserInfoDTO`
+        let user_dto: UserInfoDTO = user.into();
+        Ok(HttpResponse::Ok().json(user_dto))
     } else {
         Err(ServerResponseError::BadRequest("No data provided".to_string()))
     }

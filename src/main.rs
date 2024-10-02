@@ -33,6 +33,7 @@ use utoipa_swagger_ui::{Config, SwaggerUi};
 
 mod auth;
 mod config;
+mod dto;
 mod error;
 mod init_env;
 mod logging;
