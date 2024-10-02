@@ -12,7 +12,6 @@ pub struct IdDTO {
     pub tb: String,
 }
 
-
 impl From<Thing> for IdDTO {
     fn from(thing: Thing) -> Self {
         IdDTO {

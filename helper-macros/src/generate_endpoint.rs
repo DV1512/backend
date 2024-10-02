@@ -1,9 +1,12 @@
-use proc_macro2::{Span, TokenStream};
 use proc_macro::TokenStream as TokenStream1;
+use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::punctuated::Punctuated;
-use syn::{parenthesized, parse::{Parse, ParseStream}, parse_macro_input, Attribute, Block, Ident, LitInt, LitStr, Token, Type};
-
+use syn::{
+    parenthesized,
+    parse::{Parse, ParseStream},
+    parse_macro_input, Attribute, Block, Ident, LitInt, LitStr, Token, Type,
+};
 
 /// Input to the `generate_endpoint` macro
 ///
@@ -40,7 +43,7 @@ pub(crate) fn generate_endpoint_internal(input: TokenStream) -> TokenStream1 {
         path,
         params,
         fn_block,
-        docs
+        docs,
     } = input;
 
     // Map method to the corresponding actix-web attribute
@@ -91,8 +94,14 @@ pub(crate) fn generate_endpoint_internal(input: TokenStream) -> TokenStream1 {
         if let Some(responses) = responses {
             let response_iter = responses.iter().map(|response| {
                 let status_code = response.status_code;
-                let description = response.description.as_ref().map_or(quote! {}, |desc| quote! {, description = #desc });
-                let response_ty = response.response.as_ref().map_or(quote! {}, |res| quote! {, response = #res });
+                let description = response
+                    .description
+                    .as_ref()
+                    .map_or(quote! {}, |desc| quote! {, description = #desc });
+                let response_ty = response
+                    .response
+                    .as_ref()
+                    .map_or(quote! {}, |res| quote! {, response = #res });
                 quote! {
                     (status = #status_code #description #response_ty)
                 }
@@ -194,7 +203,7 @@ impl Parse for Documentation {
         // Parse in a loop, allowing fields in any order
         while !input.is_empty() {
             let ident: Ident = input.parse()?;
-            input.parse::<Token![:]>()?;  // Expect a colon after each identifier
+            input.parse::<Token![:]>()?; // Expect a colon after each identifier
 
             match ident.to_string().as_str() {
                 "context_path" => {
@@ -202,22 +211,23 @@ impl Parse for Documentation {
                         return Err(syn::Error::new_spanned(ident, "Duplicate context_path"));
                     }
                     context_path = Some(input.parse()?);
-                },
+                }
                 "tag" => {
                     if tag.is_some() {
                         return Err(syn::Error::new_spanned(ident, "Duplicate tag"));
                     }
                     tag = Some(input.parse()?);
-                },
+                }
                 "responses" => {
                     if responses.is_some() {
                         return Err(syn::Error::new_spanned(ident, "Duplicate responses"));
                     }
                     let content;
-                    syn::braced!(content in input);  // Expect a block around the responses
-                    let parsed_responses = Punctuated::<Response, Token![,]>::parse_terminated(&content)?;
+                    syn::braced!(content in input); // Expect a block around the responses
+                    let parsed_responses =
+                        Punctuated::<Response, Token![,]>::parse_terminated(&content)?;
                     responses = Some(parsed_responses.into_iter().collect());
-                },
+                }
                 "params" => {
                     let content;
                     parenthesized!(content in input);
@@ -234,7 +244,12 @@ impl Parse for Documentation {
             }
         }
 
-        Ok(Documentation { context_path, tag, responses, params })
+        Ok(Documentation {
+            context_path,
+            tag,
+            responses,
+            params,
+        })
     }
 }
 
@@ -280,13 +295,19 @@ impl Parse for Response {
             match ident.to_string().as_str() {
                 "description" => {
                     if description.is_some() || response.is_some() {
-                        return Err(syn::Error::new_spanned(ident, "Cannot have both 'description' and 'response'"));
+                        return Err(syn::Error::new_spanned(
+                            ident,
+                            "Cannot have both 'description' and 'response'",
+                        ));
                     }
                     description = Some(content.parse()?);
                 }
                 "response" => {
                     if description.is_some() || response.is_some() {
-                        return Err(syn::Error::new_spanned(ident, "Cannot have both 'description' and 'response'"));
+                        return Err(syn::Error::new_spanned(
+                            ident,
+                            "Cannot have both 'description' and 'response'",
+                        ));
                     }
                     response = Some(content.parse()?);
                 }
@@ -301,10 +322,17 @@ impl Parse for Response {
 
         // Ensure at least one of `description` or `response` is present
         if description.is_none() && response.is_none() {
-            return Err(syn::Error::new_spanned(status_ident, "Either 'description' or 'response' must be present"));
+            return Err(syn::Error::new_spanned(
+                status_ident,
+                "Either 'description' or 'response' must be present",
+            ));
         }
 
-        Ok(Response { status_code, description, response })
+        Ok(Response {
+            status_code,
+            description,
+            response,
+        })
     }
 }
 
@@ -384,9 +412,18 @@ impl Parse for GenerateEndpointInput {
 
                     let content;
                     syn::braced!(content in input);
-                    let parsed_params = Punctuated::<Parameter, Token![,]>::parse_terminated(&content)?;
+                    let parsed_params =
+                        Punctuated::<Parameter, Token![,]>::parse_terminated(&content)?;
 
-                    params = Some(parsed_params.into_iter().map(|param| Parameter { name: param.name, ty: param.ty }).collect());
+                    params = Some(
+                        parsed_params
+                            .into_iter()
+                            .map(|param| Parameter {
+                                name: param.name,
+                                ty: param.ty,
+                            })
+                            .collect(),
+                    );
                 }
                 _ => return Err(syn::Error::new_spanned(ident, "Unexpected field")),
             }

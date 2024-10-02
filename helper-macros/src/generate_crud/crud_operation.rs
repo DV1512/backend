@@ -1,11 +1,11 @@
+use proc_macro2::TokenStream;
+use quote::quote;
+use syn::token::Brace;
 use syn::{
     braced,
     parse::{Parse, ParseStream},
     Attribute, Block, Expr, Ident, ItemStruct, LitStr, Token, Visibility,
 };
-use syn::token::Brace;
-use proc_macro2::TokenStream;
-use quote::quote;
 
 pub(crate) enum OperationType {
     Create,
@@ -27,7 +27,12 @@ pub(crate) struct CrudOperation {
     pub(crate) after_hook: Option<Block>,
 }
 impl CrudOperation {
-    pub(crate) fn generate(&self, base_path: &str, struct_ident: &Ident, operation_type: OperationType) -> TokenStream {
+    pub(crate) fn generate(
+        &self,
+        base_path: &str,
+        struct_ident: &Ident,
+        operation_type: OperationType,
+    ) -> TokenStream {
         // Generate the full path
         let full_path = if self.path.value().starts_with("/") {
             format!("{}{}", base_path, self.path.value())
@@ -110,7 +115,8 @@ impl CrudOperation {
                         Err(crate::error::ServerResponseError::InternalError("Error inserting into database".to_string()))
                     }
                 };
-                let return_type = quote! { Result<#struct_ident, crate::error::ServerResponseError> };
+                let return_type =
+                    quote! { Result<#struct_ident, crate::error::ServerResponseError> };
                 (http_method, function_body, return_type)
             }
             OperationType::Read => {
@@ -126,7 +132,8 @@ impl CrudOperation {
 
                     Ok(result)
                 };
-                let return_type = quote! { Result<Vec<#struct_ident>, crate::error::ServerResponseError> };
+                let return_type =
+                    quote! { Result<Vec<#struct_ident>, crate::error::ServerResponseError> };
                 (http_method, function_body, return_type)
             }
             OperationType::Update => {
@@ -146,7 +153,8 @@ impl CrudOperation {
                         Err(crate::error::ServerResponseError::NotFound)
                     }
                 };
-                let return_type = quote! { Result<#struct_ident, crate::error::ServerResponseError> };
+                let return_type =
+                    quote! { Result<#struct_ident, crate::error::ServerResponseError> };
                 (http_method, function_body, return_type)
             }
             OperationType::Delete => {
@@ -242,8 +250,6 @@ impl CrudOperation {
         TokenStream::from(tokens)
     }
 }
-
-
 
 impl Parse for CrudOperation {
     fn parse(input: ParseStream) -> syn::Result<Self> {
@@ -360,11 +366,11 @@ impl Parse for CrudOperation {
         }
 
         // Ensure required fields are present
-        let endpoint_fn_name = endpoint_fn_name.ok_or_else(|| {
-            syn::Error::new(input.span(), "Missing required field 'endpoint'")
-        })?;
+        let endpoint_fn_name = endpoint_fn_name
+            .ok_or_else(|| syn::Error::new(input.span(), "Missing required field 'endpoint'"))?;
 
-        let path = path.ok_or_else(|| syn::Error::new(input.span(), "Missing required field 'path'"))?;
+        let path =
+            path.ok_or_else(|| syn::Error::new(input.span(), "Missing required field 'path'"))?;
 
         Ok(CrudOperation {
             attrs,

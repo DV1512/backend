@@ -1,12 +1,12 @@
-use quote::quote;
-use syn::parse_macro_input;
-use proc_macro2::TokenStream;
-use proc_macro::TokenStream as TokenStream1;
 use crate::generate_crud::crud_operation::OperationType;
 use crate::generate_crud::generate_crud_input::GenerateCrudInput;
+use proc_macro::TokenStream as TokenStream1;
+use proc_macro2::TokenStream;
+use quote::quote;
+use syn::parse_macro_input;
 
-pub(crate) mod generate_crud_input;
 pub(crate) mod crud_operation;
+pub(crate) mod generate_crud_input;
 mod test;
 
 pub(crate) fn generate_crud_internal(input: TokenStream) -> TokenStream1 {
@@ -19,7 +19,7 @@ pub(crate) fn generate_crud_internal(input: TokenStream) -> TokenStream1 {
         create_op,
         read_op,
         update_op,
-        delete_op
+        delete_op,
     } = input;
 
     let create_tokens = if let Some(create_op) = create_op {

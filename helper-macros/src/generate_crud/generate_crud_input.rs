@@ -1,7 +1,6 @@
-use syn::{Ident, ItemStruct, LitStr, Token};
-use syn::parse::{Parse, ParseStream};
 use crate::generate_crud::crud_operation::CrudOperation;
-
+use syn::parse::{Parse, ParseStream};
+use syn::{Ident, ItemStruct, LitStr, Token};
 
 #[derive(Clone)]
 pub(crate) struct GenerateCrudInput {
@@ -20,7 +19,10 @@ impl Parse for GenerateCrudInput {
 
         let path_ident = input.parse::<Ident>()?;
         if path_ident != "path" {
-            return Err(syn::Error::new_spanned(path_ident, "Expected 'path' keyword"));
+            return Err(syn::Error::new_spanned(
+                path_ident,
+                "Expected 'path' keyword",
+            ));
         }
         input.parse::<Token![:]>()?;
         let base_path: LitStr = input.parse()?;

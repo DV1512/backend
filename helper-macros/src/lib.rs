@@ -1,10 +1,10 @@
-use proc_macro::TokenStream;
-use crate::generate_endpoint::generate_endpoint_internal;
-use proc_macro_error::proc_macro_error;
 use crate::generate_crud::generate_crud_internal;
+use crate::generate_endpoint::generate_endpoint_internal;
+use proc_macro::TokenStream;
+use proc_macro_error::proc_macro_error;
 
-mod generate_endpoint;
 mod generate_crud;
+mod generate_endpoint;
 
 #[proc_macro_error]
 #[proc_macro]

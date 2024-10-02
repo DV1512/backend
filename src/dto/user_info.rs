@@ -2,7 +2,7 @@ use crate::auth::{Role, UserInfo};
 use crate::models::datetime::Datetime;
 use crate::utils::create_dto::create_dto;
 
-create_dto!{
+create_dto! {
     UserInfo,
     struct UserInfoDTO {
         pub email: String,

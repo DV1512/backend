@@ -1,10 +1,10 @@
 #![cfg(test)]
 
+use crate::generate_crud::crud_operation::{CrudOperation, OperationType};
+use crate::generate_crud::generate_crud_input::GenerateCrudInput;
 use proc_macro2::{Ident, Span};
 use syn::__private::TokenStream2;
 use syn::parse_quote;
-use crate::generate_crud::crud_operation::{CrudOperation, OperationType};
-use crate::generate_crud::generate_crud_input::GenerateCrudInput;
 
 #[test]
 fn test_parse_generate_crud_input() {
@@ -94,7 +94,10 @@ fn test_parse_generate_crud_input() {
     // Validate the create operation
     let create_op = parsed_input.create_op.unwrap();
     assert_eq!(create_op.fn_name.to_string(), "create_user");
-    assert_eq!(create_op.endpoint_fn_name.to_string(), "create_user_endpoint");
+    assert_eq!(
+        create_op.endpoint_fn_name.to_string(),
+        "create_user_endpoint"
+    );
     assert_eq!(create_op.path.value(), "/users");
     assert!(create_op.params_struct.is_some());
     assert!(create_op.query_block.is_some());
@@ -114,7 +117,10 @@ fn test_parse_generate_crud_input() {
     // Validate the update operation
     let update_op = parsed_input.update_op.unwrap();
     assert_eq!(update_op.fn_name.to_string(), "update_user");
-    assert_eq!(update_op.endpoint_fn_name.to_string(), "update_user_endpoint");
+    assert_eq!(
+        update_op.endpoint_fn_name.to_string(),
+        "update_user_endpoint"
+    );
     assert_eq!(update_op.path.value(), "/users/{id}");
     assert!(update_op.params_struct.is_some());
     assert!(update_op.query_block.is_some());
@@ -124,7 +130,10 @@ fn test_parse_generate_crud_input() {
     // Validate the delete operation
     let delete_op = parsed_input.delete_op.unwrap();
     assert_eq!(delete_op.fn_name.to_string(), "delete_user");
-    assert_eq!(delete_op.endpoint_fn_name.to_string(), "delete_user_endpoint");
+    assert_eq!(
+        delete_op.endpoint_fn_name.to_string(),
+        "delete_user_endpoint"
+    );
     assert_eq!(delete_op.path.value(), "/users/{id}");
     assert!(delete_op.params_struct.is_some());
     assert!(delete_op.query_block.is_some());
@@ -159,5 +168,8 @@ fn test_operation() {
 
     let struct_ident = Ident::new("User", Span::call_site());
 
-    print!("{}", parsed_input.generate("", &struct_ident, OperationType::Update));
+    print!(
+        "{}",
+        parsed_input.generate("", &struct_ident, OperationType::Update)
+    );
 }

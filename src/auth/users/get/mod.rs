@@ -6,13 +6,13 @@ use crate::dto::UserInfoDTO;
 use crate::AppState;
 use actix_web::{web, HttpResponse, Responder};
 use anyhow::Result;
+use helper_macros::generate_endpoint;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use surrealdb::Surreal;
 use tosic_utils::{Select, Statement};
 use tracing::{error, info};
 use utoipa::IntoParams;
-use helper_macros::generate_endpoint;
 
 #[tracing::instrument(skip(db))]
 pub async fn get_user_by_username<T>(db: &Arc<Surreal<T>>, username: &str) -> Result<UserInfo>
@@ -81,7 +81,9 @@ where
     T: surrealdb::Connection,
 {
     if data.email.is_none() && data.token.is_none() && data.username.is_none() {
-        return Err(ServerResponseError::BadRequest("No data provided".to_string()));
+        return Err(ServerResponseError::BadRequest(
+            "No data provided".to_string(),
+        ));
     }
 
     if let Some(email) = &data.email {
@@ -125,7 +127,9 @@ where
         let user_dto: UserInfoDTO = user.into();
         Ok(HttpResponse::Ok().json(user_dto))
     } else {
-        Err(ServerResponseError::BadRequest("No data provided".to_string()))
+        Err(ServerResponseError::BadRequest(
+            "No data provided".to_string(),
+        ))
     }
 }
 
