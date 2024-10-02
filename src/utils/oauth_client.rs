@@ -1,5 +1,5 @@
 macro_rules! define_oauth_client {
-    (
+    {
         $oauth_struct:ident,
         $provider_struct:ident,
         $scopes_type:ty,
@@ -12,7 +12,7 @@ macro_rules! define_oauth_client {
             default_base_url: $default_base_url:expr,
             user_info_mapping: |$user_info_var:ident| $user_info_mapping:block,
         }
-    ) => {
+    } => {
         use api_forge::ApiRequest;
         use oauth2::TokenResponse;
         use crate::auth::oauth::provider::Provider;

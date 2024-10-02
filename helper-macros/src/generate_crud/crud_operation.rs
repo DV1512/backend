@@ -185,6 +185,7 @@ impl CrudOperation {
         let endpoint_params = if self.params_struct.is_some() {
             quote! {
                 params: {
+                    state: ::actix_web::web::Data<crate::AppState>,
                     data: ::actix_web::web::Json<#params_type>
                 };
             }

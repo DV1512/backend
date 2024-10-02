@@ -43,13 +43,13 @@
 /// ]);
 /// ```
 macro_rules! define_scopes {
-    (
+    {
         $scopes_struct:ident;
         $scope_enum:ident
         {
             $( $variant:ident => $value:expr ),+ $(,)?
         }
-    ) => {
+    } => {
         #[derive(Debug, PartialEq, Clone)]
         pub enum $scope_enum {
             $( $variant ),+

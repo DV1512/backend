@@ -4,7 +4,7 @@ use crate::auth::users::get::utils::get_user_by_token;
 use crate::auth::UserInfo;
 use crate::dto::UserInfoDTO;
 use crate::AppState;
-use actix_web::{get, web, HttpResponse, Responder};
+use actix_web::{web, HttpResponse, Responder};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -12,6 +12,7 @@ use surrealdb::Surreal;
 use tosic_utils::{Select, Statement};
 use tracing::{error, info};
 use utoipa::IntoParams;
+use helper_macros::generate_endpoint;
 
 #[tracing::instrument(skip(db))]
 pub async fn get_user_by_username<T>(db: &Arc<Surreal<T>>, username: &str) -> Result<UserInfo>
@@ -131,20 +132,26 @@ where
 use crate::auth::UserInfoExampleResponses;
 use crate::error::ServerResponseError;
 
-#[utoipa::path(
-    params(GetUserBy),
-    responses(
-        (status = 200, response = UserInfoExampleResponses),
-        (status = 404, description = "User not found"),
-    ),
-    tag = "user",
-)]
-#[get("")]
-pub(crate) async fn get_user_by(
-    data: web::Query<GetUserBy>,
-    state: web::Data<AppState>,
-) -> Result<impl Responder, ServerResponseError> {
-    let data = data.into_inner();
-    let db = &state.db;
-    get_user_by_internal(db, &data).await
+generate_endpoint! {
+    fn get_user_by;
+    method: get;
+    path: "";
+    docs: {
+        params: (GetUserBy),
+        tag: "user",
+        responses: {
+            (status = 200, response = UserInfoExampleResponses),
+            (status = 404, description = "User not found"),
+        }
+    }
+    params: {
+        state: web::Data<AppState>,
+        data: web::Query<GetUserBy>,
+    };
+    {
+        info!("Retrieving user");
+        let data = data.into_inner();
+        let db = &state.db;
+        get_user_by_internal(db, &data).await
+    }
 }

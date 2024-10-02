@@ -1,9 +1,33 @@
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use proc_macro::TokenStream as TokenStream1;
 use quote::quote;
 use syn::punctuated::Punctuated;
 use syn::{parenthesized, parse::{Parse, ParseStream}, parse_macro_input, Attribute, Block, Ident, LitInt, LitStr, Token, Type};
 
+
+/// Input to the `generate_endpoint` macro
+///
+/// # Example
+///
+/// ```rust
+/// # use helper_macros::generate_endpoint;
+/// generate_endpoint! {
+///     fn login;
+///     method: get;
+///     path: "/health";
+///     docs: {
+///         tag: "health",
+///         context_path: "/",
+///         responses: {
+///             (status = 200, description = "Everything works just fine!")
+///         }
+///     }
+///     {
+///         Ok(HttpResponse::Ok().body("Everything works just fine!"))
+///     }
+/// }
+///```
+///
 pub(crate) fn generate_endpoint_internal(input: TokenStream) -> TokenStream1 {
     let input: TokenStream1 = input.into();
 
@@ -42,7 +66,7 @@ pub(crate) fn generate_endpoint_internal(input: TokenStream) -> TokenStream1 {
             let ty = &p.ty;
             quote! { #name: #ty }
         });
-        quote! { , #( #params_iter ),* }
+        quote! { #( #params_iter ),* }
     } else {
         quote! {}
     };
@@ -51,35 +75,38 @@ pub(crate) fn generate_endpoint_internal(input: TokenStream) -> TokenStream1 {
         let context_path = docs.context_path;
         let tag = docs.tag;
         let responses = docs.responses;
+        let doc_params = docs.params;
 
-        let context_path = if let Some(context_path) = context_path {
-            quote! { context_path = #context_path }
-        } else {
-            quote! {}
-        };
+        // Create a vector for optional attributes, and only include non-empty tokens
+        let mut doc_tokens = vec![];
 
-        let tag = if let Some(tag) = tag {
-            quote! { tag = #tag }
-        } else {
-            quote! {}
-        };
+        if let Some(context_path) = context_path {
+            doc_tokens.push(quote! { context_path = #context_path });
+        }
 
-        let responses = if let Some(responses) = responses {
+        if let Some(tag) = tag {
+            doc_tokens.push(quote! { tag = #tag });
+        }
+
+        if let Some(responses) = responses {
             let response_iter = responses.iter().map(|response| {
                 let status_code = response.status_code;
-                let description = response.description.as_ref().map_or(quote! {}, |desc| quote! { description = #desc });
-                let response_ty = response.response.as_ref().map_or(quote! {}, |res| quote! { response = #res });
+                let description = response.description.as_ref().map_or(quote! {}, |desc| quote! {, description = #desc });
+                let response_ty = response.response.as_ref().map_or(quote! {}, |res| quote! {, response = #res });
                 quote! {
-                    (status = #status_code, #description, #response_ty)
+                    (status = #status_code #description #response_ty)
                 }
             });
-            quote! { responses(#( #response_iter ),*) }
-        } else {
-            quote! {}
-        };
+            doc_tokens.push(quote! { responses(#( #response_iter ),*) });
+        }
 
+        if let Some(doc_params) = doc_params {
+            doc_tokens.push(quote! { params( #( #doc_params ),* ) });
+        }
+
+        // Join the doc tokens with commas only between non-empty tokens
         quote! {
-            #[utoipa::path(#method, path = #path, #context_path, #tag, #responses)]
+            #[utoipa::path(#method, path = #path, #( #doc_tokens ),*)]
         }
     } else {
         quote! {}
@@ -91,17 +118,42 @@ pub(crate) fn generate_endpoint_internal(input: TokenStream) -> TokenStream1 {
         #docs_attr
         #method_attr
         pub async fn #fn_name(
-            state: actix_web::web::Data<crate::AppState>
             #fn_params
-        ) -> Result<actix_web::HttpResponse, crate::error::ServerResponseError>
+        ) -> Result<impl ::actix_web::Responder, crate::error::ServerResponseError>
         #fn_block
     };
-
-    println!("{expanded}");
 
     TokenStream1::from(expanded)
 }
 
+/// Endpoint input
+///
+/// # Examples
+///
+/// ```no_compile
+/// #[allow(dead_code)]
+/// fn my_endpoint;
+/// method: get;
+/// path: "/";
+/// params: {
+///     #[derive(Serialize, Deserialize, Debug, Clone)]
+///     struct MyParams {
+///         name: String
+///     }
+/// }
+/// docs: {
+///     context_path: "/api"
+///     tag: "tag"
+///     responses: {
+///         (status = 200, description = "Request successful"),
+///         (status = 404, description = "Not found")
+///     }
+/// }
+/// {
+///     HttpResponse::Ok().body("Hello, world!")
+/// }
+/// ```
+///
 pub(crate) struct GenerateEndpointInput {
     attrs: Vec<Attribute>,
     fn_name: Ident,
@@ -112,10 +164,24 @@ pub(crate) struct GenerateEndpointInput {
     fn_block: Block,
 }
 
+/// Endpoint documentation
+///
+/// # Examples
+///
+/// ```no_compile
+/// context_path = "/api"
+/// tag = "tag"
+/// responses: {
+///     (status = 200, description = "Request successful"),
+///     (status = 404, description = "Not found")
+/// }
+/// ```
+///
 pub(crate) struct Documentation {
     context_path: Option<LitStr>,
     tag: Option<LitStr>,
     responses: Option<Vec<Response>>,
+    params: Option<Vec<Ident>>,
 }
 
 impl Parse for Documentation {
@@ -123,6 +189,7 @@ impl Parse for Documentation {
         let mut context_path: Option<LitStr> = None;
         let mut tag: Option<LitStr> = None;
         let mut responses: Option<Vec<Response>> = None;
+        let mut params: Option<Vec<Ident>> = None;
 
         // Parse in a loop, allowing fields in any order
         while !input.is_empty() {
@@ -151,6 +218,13 @@ impl Parse for Documentation {
                     let parsed_responses = Punctuated::<Response, Token![,]>::parse_terminated(&content)?;
                     responses = Some(parsed_responses.into_iter().collect());
                 },
+                "params" => {
+                    let content;
+                    parenthesized!(content in input);
+
+                    let parsed_params = Punctuated::<Ident, Token![,]>::parse_terminated(&content)?;
+                    params = Some(parsed_params.into_iter().collect());
+                }
                 _ => return Err(syn::Error::new_spanned(ident, "Unexpected field")),
             }
 
@@ -160,11 +234,18 @@ impl Parse for Documentation {
             }
         }
 
-        Ok(Documentation { context_path, tag, responses })
+        Ok(Documentation { context_path, tag, responses, params })
     }
 }
 
-
+/// Endpoint response documentation
+///
+/// # Examples
+///
+/// ```no_compile
+/// (status = 200, description = "Request successful")
+/// ```
+///
 pub(crate) struct Response {
     status_code: u16,
     description: Option<LitStr>,
@@ -173,10 +254,8 @@ pub(crate) struct Response {
 
 impl Parse for Response {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        println!("parsing response");
         let content;
         parenthesized!(content in input);
-        dbg!(&content);
 
         // Parse the status field
         let status_ident: Ident = content.parse()?;
@@ -229,6 +308,14 @@ impl Parse for Response {
     }
 }
 
+/// Represents a parameter in a function signature
+///
+/// # Examples
+///
+/// ```no_compile
+/// id: i32
+/// ```
+///
 #[derive(Clone)]
 struct Parameter {
     pub(crate) name: Ident,
@@ -245,52 +332,84 @@ impl Parse for GenerateEndpointInput {
         let fn_name: Ident = input.parse()?;
         input.parse::<Token![;]>()?;
 
-        // Parse 'method: METHOD;'
-        input.parse::<Ident>()?; // method
-        input.parse::<Token![:]>()?;
-        let method: Ident = input.parse()?;
-        input.parse::<Token![;]>()?;
+        let mut method: Option<Ident> = None;
+        let mut path: Option<LitStr> = None;
+        let mut docs: Option<Documentation> = None;
+        let mut params: Option<Vec<Parameter>> = None;
 
-        // Parse 'path: "PATH";'
-        input.parse::<Ident>()?; // path
-        input.parse::<Token![:]>()?;
-        let path: LitStr = input.parse()?;
-        input.parse::<Token![;]>()?;
+        let mut ident = input.parse::<Ident>()?;
 
-        let docs: Option<Documentation> = if input.peek(Ident) && input.peek2(Token![:]) {
-            let ident = input.parse::<Ident>()?; // docs
+        while !input.is_empty() {
+            input.parse::<Token![:]>()?;
+            match ident.to_string().as_str() {
+                "method" => {
+                    if method.is_some() {
+                        return Err(syn::Error::new_spanned(ident, "Duplicate method"));
+                    }
 
-            if ident != "docs" {
-                None
-            } else {
-                input.parse::<Token![:]>()?;
+                    let method_ident = input.parse::<Ident>()?;
 
-                let content;
-                syn::braced!(content in input);
+                    match method_ident.to_string().as_str() {
+                        "get" => method = Some(Ident::new("get", Span::call_site())),
+                        "post" => method = Some(Ident::new("post", Span::call_site())),
+                        "put" => method = Some(Ident::new("put", Span::call_site())),
+                        "patch" => method = Some(Ident::new("patch", Span::call_site())),
+                        "delete" => method = Some(Ident::new("delete", Span::call_site())),
+                        _ => return Err(syn::Error::new_spanned(method_ident, "Invalid method")),
+                    }
+                }
+                "path" => {
+                    if path.is_some() {
+                        return Err(syn::Error::new_spanned(ident, "Duplicate path"));
+                    }
 
-                Some(content.parse()?)
+                    let path_lit = input.parse::<LitStr>()?;
+
+                    path = Some(path_lit);
+                }
+                "docs" => {
+                    if docs.is_some() {
+                        return Err(syn::Error::new_spanned(ident, "Duplicate docs"));
+                    }
+
+                    let content;
+                    syn::braced!(content in input);
+
+                    docs = Some(content.parse()?);
+                }
+                "params" => {
+                    if params.is_some() {
+                        return Err(syn::Error::new_spanned(ident, "Duplicate params"));
+                    }
+
+                    let content;
+                    syn::braced!(content in input);
+                    let parsed_params = Punctuated::<Parameter, Token![,]>::parse_terminated(&content)?;
+
+                    params = Some(parsed_params.into_iter().map(|param| Parameter { name: param.name, ty: param.ty }).collect());
+                }
+                _ => return Err(syn::Error::new_spanned(ident, "Unexpected field")),
             }
-        } else {
-            None
-        };
 
-        // Optionally parse parameters
-        let params = if input.peek(Ident) && input.peek2(Token![:]) {
-            let ident = input.parse::<Ident>()?; // params
-
-            if ident != "params" {
-                None
-            } else {
-                input.parse::<Token![:]>()?;
-                let content;
-                syn::braced!(content in input);
-                let params_punct = Punctuated::<Parameter, Token![,]>::parse_terminated(&content)?;
+            if input.peek(Token![;]) {
                 input.parse::<Token![;]>()?;
-                Some(params_punct.into_iter().collect())
             }
-        } else {
-            None
-        };
+
+            // if the next token is not an identifier, we're done parsing and move on to the function body
+            if !input.peek(Ident) {
+                break;
+            }
+
+            ident = input.parse::<Ident>()?;
+        }
+
+        if method.is_none() {
+            return Err(syn::Error::new_spanned(ident, "Missing 'method'"));
+        }
+
+        if path.is_none() {
+            return Err(syn::Error::new_spanned(ident, "Missing 'path'"));
+        }
 
         // Parse the call function expression
         let fn_block: Block = input.parse()?;
@@ -298,8 +417,8 @@ impl Parse for GenerateEndpointInput {
         Ok(GenerateEndpointInput {
             attrs,
             fn_name,
-            method,
-            path,
+            method: method.unwrap(),
+            path: path.unwrap(),
             params,
             docs,
             fn_block,

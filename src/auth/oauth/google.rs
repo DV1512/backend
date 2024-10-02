@@ -6,10 +6,12 @@ use crate::auth::{Role, UserInfo};
 use crate::models::datetime::Datetime;
 use crate::utils::oauth_client::define_oauth_client;
 use crate::AppState;
-use actix_web::{get, web, HttpRequest, HttpResponse, Responder, Scope};
+use actix_web::{web, HttpRequest, HttpResponse, Scope};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use tracing::{error, info};
+use helper_macros::generate_endpoint;
+use crate::error::ServerResponseError;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct GoogleUserInfo {
@@ -63,53 +65,72 @@ define_oauth_client! {
     }
 }
 
-#[utoipa::path(
-    context_path = "/google",
-    responses(
-        (status = 302, description = "Redirect to Google login page"),
-    ),
-    tag = "oauth",
-)]
-#[get("/login")]
-pub async fn google_login(state: web::Data<AppState>) -> impl Responder {
-    info!("Redirecting to Google login page");
-    let oauth = state.oauth.clone();
+generate_endpoint! {
+    fn google_login;
+    method: get;
+    path: "/login";
+    docs: {
+        context_path: "/google",
+        tag: "oauth",
+        responses: {
+            (status = 302, description = "Redirect to Google login page"),
+        }
+    }
+    params: {
+        state: web::Data<AppState>,
+    };
+    {
+        info!("Redirecting to Google login page");
+        let oauth = state.oauth.clone();
 
-    let (auth_url, _csrf_token) = oauth.google.get_auth_url();
+        let (auth_url, _csrf_token) = oauth.google.get_auth_url();
 
-    HttpResponse::Found()
-        .append_header(("Location", auth_url))
-        .finish()
+        Ok(HttpResponse::Found()
+            .append_header(("Location", auth_url))
+            .finish())
+    }
 }
 
-#[get("/callback")]
-pub async fn google_callback(
-    query: web::Query<OAuthCallbackQuery>,
-    state: web::Data<AppState>,
-    req: HttpRequest,
-) -> impl Responder {
-    info!("Google callback received");
-
-    let oauth = state.oauth.clone();
-
-    let frontend_url = req.url_for_static("frontend").unwrap().to_string();
-
-    match oauth
-        .google
-        .exchange_code(query.code.clone(), &state.db)
-        .await
-    {
-        Ok(session) => {
-            let redirect_url = format!("{}users?token={}", frontend_url, session.access_token);
-
-            HttpResponse::Found()
-                .append_header(("Location", redirect_url))
-                .finish()
+generate_endpoint! {
+    fn google_callback;
+    method: get;
+    path: "/callback";
+    docs: {
+        context_path: "/google",
+        tag: "oauth",
+        responses: {
+            (status = 302, description = "Redirect to frontend"),
         }
+    }
+    params: {
+        state: web::Data<AppState>,
+        query: web::Query<OAuthCallbackQuery>,
+        req: HttpRequest,
+    };
+    {
+        info!("Google callback received");
 
-        Err(err) => {
-            error!("Error exchanging code: {}", err);
-            HttpResponse::InternalServerError().body(err.to_string())
+        let oauth = state.oauth.clone();
+
+        let frontend_url = req.url_for_static("frontend").unwrap().to_string();
+
+        match oauth
+            .google
+            .exchange_code(query.code.clone(), &state.db)
+            .await
+        {
+            Ok(session) => {
+                let redirect_url = format!("{}users?token={}", frontend_url, session.access_token);
+
+                Ok(HttpResponse::Found()
+                    .append_header(("Location", redirect_url))
+                    .finish())
+            }
+
+            Err(err) => {
+                error!("Error exchanging code: {}", err);
+                Err(ServerResponseError::InternalError(err.to_string()))
+            }
         }
     }
 }

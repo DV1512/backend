@@ -46,7 +46,7 @@
 ///
 /// This will create a `GoogleProvider` struct and implement the necessary traits and methods.
 macro_rules! define_provider {
-    (
+    {
         $provider_struct:ident;
         $oauth_name:expr;
 
@@ -71,7 +71,7 @@ macro_rules! define_provider {
             $( $config_key:expr => $config_value:expr ),* $(,)?
         }
         )?
-    ) => {
+    } => {
         #[derive(Debug, Clone, Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq, Hash)]
         pub(crate) struct $provider_struct {
             pub(crate) id: surrealdb::sql::Thing,

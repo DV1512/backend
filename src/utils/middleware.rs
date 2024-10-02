@@ -1,6 +1,6 @@
 /// macro to define a middleware removing most of the boilerplate code for implementing a middleware
 macro_rules! define_middleware {
-    (
+    {
         $(#[$meta:meta])*
         $vis:vis struct $middleware_name:ident {
             $($middleware_field:ident : $middleware_type:ty),* $(,)?
@@ -10,7 +10,7 @@ macro_rules! define_middleware {
         $service_vis:vis struct $service_name:ident;
 
         $call_fn:expr
-    ) => {
+    } => {
         $(#[$meta])*
         $vis struct $middleware_name {
             $(pub $middleware_field: $middleware_type),*
