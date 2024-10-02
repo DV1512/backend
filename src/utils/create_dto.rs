@@ -7,6 +7,7 @@ macro_rules! create_dto {
         }
     ) => {
         $(#[$meta])*
+        #[derive(Default, serde::Serialize, serde::Deserialize, Clone, Debug)]
         pub(crate) struct $to {
             pub id: crate::dto::IdDTO,
             $($vis $field: $ty,)*
@@ -26,21 +27,21 @@ macro_rules! create_dto {
                 match thing {
                     Some(thing) => thing.into(),
                     None => $to {
-                        id: thing.id.into(),
-                        $($field: Default::default(),)*
+                        ..Default::default()
                     }
                 }
             }
         }
 
-        impl From<&$from> for $to {
-            fn from(thing: &$from) -> Self {
+        impl<'a> From<&'a $from> for $to {
+            fn from(thing: &'a $from) -> Self {
                 $to {
-                    id: thing.id.into(),
-                    $($field: thing.$field,)*
+                    id: thing.id.clone().into(),
+                    $($field: thing.$field.clone(),)*
                 }
             }
         }
     };
 }
+
 pub(crate) use create_dto;
