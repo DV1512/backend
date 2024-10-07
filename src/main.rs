@@ -244,7 +244,6 @@ async fn main() -> Result<(), ServerError> {
             .external_resource("base_url", base_url.clone())
             .service(health_check)
             .service(api(limiter, logger))
-            .service(test_session)
             .wrap(cors)
             .wrap(IdentityMiddleware::default())
             .wrap(
