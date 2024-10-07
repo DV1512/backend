@@ -135,6 +135,7 @@ where
 
 use crate::auth::UserInfoExampleResponses;
 use crate::error::ServerResponseError;
+use actix_identity::Identity;
 
 generate_endpoint! {
     fn get_user_by;

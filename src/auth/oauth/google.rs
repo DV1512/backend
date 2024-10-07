@@ -1,3 +1,4 @@
+use actix_identity::Identity;
 use crate::auth::oauth::error::OauthError;
 use crate::auth::oauth::provider::google::GoogleProvider;
 use crate::auth::oauth::scopes::google::{GoogleScope, GoogleScopes};
@@ -7,7 +8,8 @@ use crate::error::ServerResponseError;
 use crate::models::datetime::Datetime;
 use crate::utils::oauth_client::define_oauth_client;
 use crate::AppState;
-use actix_web::{web, HttpRequest, HttpResponse, Scope};
+use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Scope};
+use actix_web::cookie::Cookie;
 use anyhow::Result;
 use helper_macros::generate_endpoint;
 use serde::{Deserialize, Serialize};
@@ -121,9 +123,11 @@ generate_endpoint! {
         {
             Ok(session) => {
                 let redirect_url = format!("{}users?token={}", frontend_url, session.access_token);
+                Identity::login(&req.extensions(), session.id.expect("Failed to get user id").to_string()).unwrap();
 
                 Ok(HttpResponse::Found()
                     .append_header(("Location", redirect_url))
+                    .cookie(Cookie::new("token", session.access_token))
                     .finish())
             }
 

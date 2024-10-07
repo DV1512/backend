@@ -7,14 +7,19 @@ use crate::init_env::init_env;
 use crate::logging::init_tracing;
 use crate::middlewares::logger::{LogEntry, LoggingMiddleware};
 use crate::server_error::ServerError;
-use crate::state::{app_state, AppState};
+use crate::state::{app_state, db, AppState};
 use crate::swagger::{ApiDocs, DocsV1};
 use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
 use actix_extensible_rate_limit::backend::{SimpleInputFuture, SimpleOutput};
 use actix_extensible_rate_limit::RateLimiter;
+use actix_identity::{Identity, IdentityMiddleware};
+use actix_session::config::PersistentSession;
+use actix_session::{Session, SessionMiddleware};
+use actix_session::storage::CookieSessionStore;
 use actix_web::dev::ServiceRequest;
 use actix_web::middleware::NormalizePath;
 use actix_web::{get, web, HttpResponse, HttpServer, Responder};
+use actix_web::cookie::Key;
 use api_forge::{ApiRequest, Request};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
@@ -30,6 +35,7 @@ use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_scalar::{Scalar, Servable as OtherServable};
 use utoipa_swagger_ui::{Config, SwaggerUi};
+use helper_macros::generate_endpoint;
 
 mod auth;
 mod config;
@@ -223,6 +229,8 @@ async fn main() -> Result<(), ServerError> {
         }
     });
 
+    let key = Key::generate();
+
     info!("Setting up server on port {}", port);
     HttpServer::new(move || {
         let cors = cors();
@@ -236,7 +244,16 @@ async fn main() -> Result<(), ServerError> {
             .external_resource("base_url", base_url.clone())
             .service(health_check)
             .service(api(limiter, logger))
+            .service(test_session)
             .wrap(cors)
+            .wrap(IdentityMiddleware::default())
+            .wrap(
+                SessionMiddleware::builder(CookieSessionStore::default(), key.clone())
+                    .cookie_same_site(actix_web::cookie::SameSite::None)
+                    .session_lifecycle(PersistentSession::default())
+                    .build()
+            )
+            .default_service(web::to(|| HttpResponse::Ok()))
     })
     .bind(format!("0.0.0.0:{port}"))?
     .bind(format!("[::1]:{port}"))?

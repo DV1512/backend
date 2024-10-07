@@ -198,7 +198,11 @@ impl CrudOperation {
                 };
             }
         } else {
-            quote! {}
+            quote! {
+                params: {
+                    state: ::actix_web::web::Data<crate::AppState>
+                };
+            }
         };
 
         // Define endpoint function body
