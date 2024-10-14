@@ -1,0 +1,65 @@
+use crate::auth::session::UserSession;
+use crate::error;
+use crate::generate_endpoint;
+use actix_web::HttpResponse;
+use anyhow::{bail, Result};
+use tracing::info;
+
+pub async fn end_user_session(email: String) -> Result<()> {
+    if let Some(session) = UserSession::fetch_by_email(email.clone()).await {
+        session.delete().await?;
+        println!("{}: Deleted the session", email.clone());
+        Ok(())
+    } else {
+        bail!("No such session!")
+    }
+}
+
+pub async fn clear_tokens(email: String) -> Result<()> {
+    if let Some(mut session) = UserSession::fetch_by_email(email.clone()).await {
+        session.access_token = String::new();
+        session.refresh_token = None;
+        session.update().await?;
+        Ok(())
+    } else {
+        bail!("No such tokens");
+    }
+}
+
+pub async fn logout_user(email: String) -> Result<()> {
+    clear_tokens(email.clone()).await?;
+    end_user_session(email.clone()).await?;
+    println!("Logged out!");
+    Ok(())
+}
+
+generate_endpoint! {
+    fn logout_user_endpoint;
+    method: post;
+    path: "/logout";
+    docs: {
+        context_path: "/src",
+        tag: "session",
+        responses: {
+            (status = 302, description = "user logged out successfully"),
+        }
+    }
+    params: {
+        email: String,
+    };
+    {
+        info!("Trying to logout user");
+        match logout_user(email.clone()).await{
+            Ok(_)=>Ok(HttpResponse::Found()
+                .append_header(("Location", "/"))
+                .finish()),
+
+            Err(e)=>{
+                error!("Failed to logout user {}", e);
+                Ok(HttpResponse::InternalServerError().json("Failed ot logout user"))
+
+            }
+
+            }
+        }
+}

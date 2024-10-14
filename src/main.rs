@@ -14,13 +14,14 @@ use actix_extensible_rate_limit::backend::{SimpleInputFuture, SimpleOutput};
 use actix_extensible_rate_limit::RateLimiter;
 use actix_identity::{Identity, IdentityMiddleware};
 use actix_session::config::PersistentSession;
-use actix_session::{Session, SessionMiddleware};
 use actix_session::storage::CookieSessionStore;
+use actix_session::{Session, SessionMiddleware};
+use actix_web::cookie::Key;
 use actix_web::dev::ServiceRequest;
 use actix_web::middleware::NormalizePath;
 use actix_web::{get, web, HttpResponse, HttpServer, Responder};
-use actix_web::cookie::Key;
 use api_forge::{ApiRequest, Request};
+use helper_macros::generate_endpoint;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use surrealdb::engine::remote::ws::{Client, Ws};
@@ -35,7 +36,6 @@ use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_scalar::{Scalar, Servable as OtherServable};
 use utoipa_swagger_ui::{Config, SwaggerUi};
-use helper_macros::generate_endpoint;
 
 mod auth;
 mod config;
@@ -43,6 +43,7 @@ mod dto;
 mod error;
 mod init_env;
 mod logging;
+mod logout;
 mod middlewares;
 mod models;
 mod server_error;
@@ -250,7 +251,7 @@ async fn main() -> Result<(), ServerError> {
                 SessionMiddleware::builder(CookieSessionStore::default(), key.clone())
                     .cookie_same_site(actix_web::cookie::SameSite::None)
                     .session_lifecycle(PersistentSession::default())
-                    .build()
+                    .build(),
             )
             .default_service(web::to(|| HttpResponse::Ok()))
     })
