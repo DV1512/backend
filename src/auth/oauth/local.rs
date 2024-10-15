@@ -1,3 +1,4 @@
+use crate::state::AppState;
 use actix_web::{web, HttpResponse, Scope};
 use helper_macros::generate_endpoint;
 use oauth2::{AccessToken, RefreshToken};
@@ -6,10 +7,16 @@ use rand::{
     thread_rng,
 };
 use serde::{Deserialize, Serialize};
+use tracing::info;
 use utoipa::ToSchema;
 
-/// The `TokenResponse` type models the response data
-/// of the "/token" endpoint.
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+#[serde(tag = "grant_type", rename_all = "lowercase")]
+enum TokenRequest {
+    Password { username: String, password: String },
+    RefreshToken { refresh_token: RefreshToken },
+}
+
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 struct TokenResponse<'a> {
     access_token: AccessToken,
@@ -36,7 +43,7 @@ impl<'a> TokenResponse<'a> {
 
 generate_endpoint! {
     fn local_token;
-    method: get;
+    method: post;
     path: "/token";
     docs: {
         tag: "token",
@@ -45,7 +52,12 @@ generate_endpoint! {
             (status = 200, description = "Local OAuth provider token endpoint")
         }
     }
+    params: {
+        state: web::Data<AppState>,
+        data: web::Form<TokenRequest>,
+    };
     {
+        info!("Recieved token request: {:?}", data);
         Ok(HttpResponse::Ok().json(TokenResponse::new()))
     }
 }
