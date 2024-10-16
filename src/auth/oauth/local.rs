@@ -1,13 +1,15 @@
-use crate::auth::users::get::get_user_by_username;
+use crate::auth::oauth::provider::OauthProvider;
+use crate::error::ServerResponseError;
 use crate::state::AppState;
-use actix_web::{web, HttpResponse, Scope};
-use helper_macros::generate_endpoint;
+use actix_web::http::header::CacheDirective;
+use actix_web::{http::header, web, HttpResponse, Scope};
 use oauth2::{AccessToken, RefreshToken};
 use rand::{
     distributions::{Alphanumeric, DistString},
     thread_rng,
 };
 use serde::{Deserialize, Serialize};
+use surrealdb::sql::{Datetime, Thing};
 use tracing::info;
 use utoipa::ToSchema;
 
@@ -42,24 +44,50 @@ impl<'a> TokenResponse<'a> {
     }
 }
 
-generate_endpoint! {
-    fn local_token;
-    method: post;
-    path: "/token";
-    docs: {
-        tag: "token",
-        context_path: "/local",
-        responses: {
-            (status = 200, description = "Local OAuth provider token endpoint")
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Foo {
+    id: Option<Thing>,
+    providers: Option<Vec<OauthProvider>>,
+    created_at: Datetime,
+    updated_at: Datetime,
+    password: Option<String>,
+}
+
+#[utoipa::path(post,path = "/token",context_path = "/local",tag = "token",responses((status = 200u16,description = "Local OAuth provider token endpoint")))]
+#[actix_web::post("/token")]
+pub async fn local_token(
+    state: web::Data<AppState>,
+    data: web::Form<TokenRequest>,
+) -> Result<impl ::actix_web::Responder, crate::error::ServerResponseError> {
+    info!("Recieved token request: {:?}", &data);
+
+    match data.into_inner() {
+        TokenRequest::RefreshToken { refresh_token } => Err(ServerResponseError::BadRequest(
+            "Refreshing tokens not yet supported".to_string(),
+        )),
+        TokenRequest::Password { username, password } => {
+            let query =
+                r#"SELECT COUNT() FROM user WHERE username = $username AND password = $password;"#;
+            let query_result: Option<i32> = state
+                .db
+                .query(query)
+                .bind(("username", username))
+                .bind(("password", password))
+                .await?
+                .take("count")?;
+
+            let valid_user = query_result.is_some_and(|count| count > 0);
+            if valid_user {
+                Ok(HttpResponse::Ok()
+                    .insert_header(header::CacheControl(vec![
+                        CacheDirective::NoCache,
+                        CacheDirective::NoStore,
+                    ]))
+                    .json(TokenResponse::new()))
+            } else {
+                Err(ServerResponseError::NotFound)
+            }
         }
-    }
-    params: {
-        state: web::Data<AppState>,
-        data: web::Form<TokenRequest>,
-    };
-    {
-        info!("Recieved token request: {:?}", data);
-        Ok(HttpResponse::Ok().json(TokenResponse::new()))
     }
 }
 
