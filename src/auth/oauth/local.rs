@@ -10,13 +10,21 @@ use rand::{
 };
 use serde::{Deserialize, Serialize};
 use tracing::info;
+use utoipa::IntoParams;
 use utoipa::ToSchema;
 
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(tag = "grant_type", rename_all = "snake_case")]
-enum TokenRequest {
+enum TokenRequestType {
     Password { username: String, password: String },
     RefreshToken { refresh_token: RefreshToken },
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema, IntoParams)]
+#[serde(rename_all = "snake_case")]
+struct TokenRequest {
+    #[serde(flatten)]
+    inner: TokenRequestType,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -62,11 +70,12 @@ generate_endpoint! {
     {
         info!("Recieved token request: {:?}", &data);
 
-        match data.into_inner() {
-            TokenRequest::RefreshToken { refresh_token } => Err(ServerResponseError::BadRequest(
+        let request_type = data.inner.clone();
+        match request_type {
+            TokenRequestType::RefreshToken { refresh_token } => Err(ServerResponseError::BadRequest(
                 "Refreshing tokens not yet supported".to_string(),
             )),
-            TokenRequest::Password { username, password } => {
+            TokenRequestType::Password { username, password } => {
                 let query =
                     r#"SELECT COUNT() FROM user WHERE username = $username AND password = $password;"#;
                 let query_result: Option<i32> = state
