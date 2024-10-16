@@ -1,4 +1,3 @@
-use crate::auth::oauth::provider::OauthProvider;
 use crate::error::ServerResponseError;
 use crate::state::AppState;
 use actix_web::http::header::CacheDirective;
@@ -10,7 +9,6 @@ use rand::{
     thread_rng,
 };
 use serde::{Deserialize, Serialize};
-use surrealdb::sql::{Datetime, Thing};
 use tracing::info;
 use utoipa::ToSchema;
 
@@ -45,15 +43,6 @@ impl<'a> TokenResponse<'a> {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Foo {
-    id: Option<Thing>,
-    providers: Option<Vec<OauthProvider>>,
-    created_at: Datetime,
-    updated_at: Datetime,
-    password: Option<String>,
-}
-
 generate_endpoint! {
     fn local_token;
     method: post;
@@ -62,7 +51,8 @@ generate_endpoint! {
         tag: "token",
         context_path: "/local",
         responses: {
-            (status = 200, description = "Local OAuth provider token endpoint")
+            (status = 200, description = "Access token request successful"),
+            (status = 404, description = "User not found")
         }
     }
     params: {
