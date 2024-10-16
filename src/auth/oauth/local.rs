@@ -1,3 +1,4 @@
+use crate::auth::users::get::get_user_by_username;
 use crate::state::AppState;
 use actix_web::{web, HttpResponse, Scope};
 use helper_macros::generate_endpoint;
@@ -11,7 +12,7 @@ use tracing::info;
 use utoipa::ToSchema;
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
-#[serde(tag = "grant_type", rename_all = "lowercase")]
+#[serde(tag = "grant_type", rename_all = "snake_case")]
 enum TokenRequest {
     Password { username: String, password: String },
     RefreshToken { refresh_token: RefreshToken },
