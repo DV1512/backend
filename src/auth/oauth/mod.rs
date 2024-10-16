@@ -49,6 +49,8 @@ struct OAuthCallbackQuery {
 use github::__path_login as __path_github_login;
 use google::*;
 
+use local::__path_local_token;
+
 #[derive(OpenApi)]
-#[openapi(paths(google_login, github_login), components())]
+#[openapi(paths(google_login, github_login, local_token), components())]
 pub struct OauthApi;
