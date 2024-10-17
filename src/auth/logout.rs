@@ -5,18 +5,18 @@ use actix_web::HttpResponse;
 use anyhow::{bail, Result};
 use tracing::info;
 
-pub async fn end_user_session(email: String) -> Result<()> {
-    if let Some(session) = UserSession::fetch_by_email(email.clone()).await {
+pub async fn end_user_session(email: &String) -> Result<()> {
+    if let Some(session) = UserSession::fetch_by_email(email).await {
         session.delete().await?;
-        println!("{}: Deleted the session", email.clone());
+        println!("{}: Deleted the session", email);
         Ok(())
     } else {
         bail!("No such session!")
     }
 }
 
-pub async fn clear_tokens(email: String) -> Result<()> {
-    if let Some(mut session) = UserSession::fetch_by_email(email.clone()).await {
+pub async fn clear_tokens(email: &String) -> Result<()> {
+    if let Some(mut session) = UserSession::fetch_by_email(email).await {
         session.access_token = String::new();
         session.refresh_token = None;
         session.update().await?;
@@ -26,9 +26,9 @@ pub async fn clear_tokens(email: String) -> Result<()> {
     }
 }
 
-pub async fn logout_user(email: String) -> Result<()> {
-    clear_tokens(email.clone()).await?;
-    end_user_session(email.clone()).await?;
+pub async fn logout_user(email: &String) -> Result<()> {
+    clear_tokens(email).await?;
+    end_user_session(email).await?;
     println!("Logged out!");
     Ok(())
 }
@@ -41,25 +41,24 @@ generate_endpoint! {
         context_path: "/src",
         tag: "session",
         responses: {
-            (status = 302, description = "user logged out successfully"),
+            (status = 302, description = "User logged out successfully"),
         }
     }
     params: {
-        email: String,
+        email: &String,
     };
     {
-        info!("Trying to logout user");
-        match logout_user(email.clone()).await{
+        info!("Trying to logout User");
+        match logout_user(email).await{
             Ok(_)=>Ok(HttpResponse::Found()
                 .append_header(("Location", "/"))
                 .finish()),
 
             Err(e)=>{
-                error!("Failed to logout user {}", e);
-                Ok(HttpResponse::InternalServerError().json("Failed ot logout user"))
-
-            }
+                error!("Failed to logout User {}", e);
+                Ok(HttpResponse::InternalServerError().json("Failed to logout User"))
 
             }
         }
+    }
 }

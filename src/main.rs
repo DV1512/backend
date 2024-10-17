@@ -43,7 +43,6 @@ mod dto;
 mod error;
 mod init_env;
 mod logging;
-mod logout;
 mod middlewares;
 mod models;
 mod server_error;
