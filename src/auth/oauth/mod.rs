@@ -2,6 +2,7 @@ pub mod basic;
 pub mod error;
 pub mod github;
 pub mod google;
+pub mod logout;
 pub(crate) mod provider;
 pub(crate) mod scopes;
 
@@ -10,6 +11,7 @@ use crate::auth::oauth::google::google_oauth_service;
 use actix_web::{web, Scope};
 use anyhow::Result;
 pub use google::GoogleOauth;
+use logout::logout_endpoint;
 use serde::Deserialize;
 use utoipa::{IntoParams, OpenApi};
 
@@ -32,6 +34,7 @@ pub fn oauth_service() -> Scope {
     web::scope("/oauth")
         .service(google_oauth_service())
         .service(github_oauth_service())
+        .service(logout_endpoint)
 }
 
 #[allow(dead_code)]

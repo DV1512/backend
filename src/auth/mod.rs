@@ -8,7 +8,6 @@ use crate::models::thing::Thing;
 use std::string::String;
 //use surrealdb::sql::Thing;
 use utoipa::{ToResponse, ToSchema};
-pub mod logout;
 pub mod oauth;
 pub mod session;
 pub mod users;
