@@ -1,10 +1,12 @@
 use crate::auth::session::UserSession;
 use crate::error::ServerResponseError;
 use crate::generate_endpoint;
+use actix_web::web;
 use actix_web::HttpResponse;
+use serde::{Deserialize, Serialize};
 use tracing::{error, info};
 
-pub async fn end_user_session(email: &str) -> Result<(), ServerResponseError> {
+pub async fn end_user_session(email: String) -> Result<(), ServerResponseError> {
     if let Some(session) = UserSession::fetch_by_email(email.to_string()).await {
         match session.delete().await {
             Ok(_) => {
@@ -26,9 +28,14 @@ pub async fn end_user_session(email: &str) -> Result<(), ServerResponseError> {
 }
 
 pub async fn logout_user(email: &str) -> Result<(), ServerResponseError> {
-    end_user_session(email).await?;
+    end_user_session(email.to_string()).await?;
     info!("Logged out!");
     Ok(())
+}
+
+#[derive(Deserialize, Debug)]
+struct LogoutRequest {
+    email: String,
 }
 
 generate_endpoint! {
@@ -43,17 +50,17 @@ generate_endpoint! {
         }
     }
     params: {
-        email: String
+        request: web::Query<LogoutRequest>
     };
     {
-        info!("Trying to logout User");
-        match logout_user(&email).await{
+        let req_data = request.into_inner();
+        match logout_user(&req_data.email).await{
             Ok(_) => {
-            Ok(HttpResponse::Ok().json("User has been logged out."))
+                Ok(HttpResponse::Ok().json("User has been logged out."))
             }
             Err(err) => {
-            error!("Internal error while logging out");
-            Err(ServerResponseError::InternalError(err.to_string()))
+                error!("Internal error while logging out");
+                Err(ServerResponseError::InternalError(err.to_string()))
             }
         }
     }
