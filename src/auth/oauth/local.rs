@@ -32,10 +32,9 @@ pub(crate) enum TokenRequest {
 impl IntoParams for TokenRequest {
     fn into_params(parameter_in_provider: impl Fn() -> Option<ParameterIn>) -> Vec<Parameter> {
         let parameter_in = parameter_in_provider().unwrap_or_default();
-        // Common parameter: grant_type
         let grant_type_param = ParameterBuilder::new()
             .name("grant_type")
-            .parameter_in(parameter_in.clone()) // Adjust as necessary
+            .parameter_in(parameter_in.clone())
             .required(Required::True)
             .schema::<Object>(Some(
                 ObjectBuilder::new()
@@ -46,50 +45,41 @@ impl IntoParams for TokenRequest {
             .description(Some("Type of grant being requested"))
             .build();
 
-        // Parameters for Password variant
-        let password_params = vec![
-            ParameterBuilder::new()
-                .name("username")
-                .parameter_in(parameter_in.clone()) // Adjust as necessary
-                .required(Required::True)
-                .schema::<Object>(Some(ObjectBuilder::new().schema_type(Type::String).build()))
-                .description(Some("User's username"))
-                .build(),
-            ParameterBuilder::new()
-                .name("password")
-                .parameter_in(parameter_in.clone()) // Adjust as necessary
-                .required(Required::True)
-                .schema::<Object>(Some(
-                    ObjectBuilder::new()
-                        .schema_type(Type::String)
-                        .format(Some(SchemaFormat::KnownFormat(KnownFormat::Password)))
-                        .build(),
-                ))
-                .description(Some("User's password"))
-                .build(),
-        ];
+        let username_param = ParameterBuilder::new()
+            .name("username")
+            .parameter_in(parameter_in.clone())
+            .required(Required::False)
+            .schema::<Object>(Some(ObjectBuilder::new().schema_type(Type::String).build()))
+            .description(Some("User's username"))
+            .build();
 
-        // Parameters for RefreshToken variant
-        let refresh_token_params = vec![ParameterBuilder::new()
+        let password_param = ParameterBuilder::new()
+            .name("password")
+            .parameter_in(parameter_in.clone())
+            .required(Required::False)
+            .schema::<Object>(Some(
+                ObjectBuilder::new()
+                    .schema_type(Type::String)
+                    .format(Some(SchemaFormat::KnownFormat(KnownFormat::Password)))
+                    .build(),
+            ))
+            .description(Some("User's password"))
+            .build();
+
+        let refresh_token_params = ParameterBuilder::new()
             .name("refresh_token")
-            .parameter_in(ParameterIn::Query) // Adjust as necessary
+            .parameter_in(ParameterIn::Query)
             .required(Required::True)
             .schema::<Object>(Some(ObjectBuilder::new().schema_type(Type::String).build()))
             .description(Some("Refresh token"))
-            .build()];
+            .build();
 
-        // Combine parameters based on the variant
-        let mut params = vec![grant_type_param];
-        params.extend(password_params.into_iter().map(|mut param| {
-            param.required = Required::False;
-            param
-        }));
-        params.extend(refresh_token_params.into_iter().map(|mut param| {
-            param.required = Required::False;
-            param
-        }));
-
-        params
+        vec![
+            grant_type_param,
+            username_param,
+            password_param,
+            refresh_token_params,
+        ]
     }
 }
 
