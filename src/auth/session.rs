@@ -227,7 +227,6 @@ impl UserSession {
             .construct();
 
         INTERNAL_DB.query(sql).await?;
-
         Ok(())
     }
 
