@@ -10,8 +10,7 @@ pub async fn end_user_session(email: String) -> Result<(), ServerResponseError> 
     if let Some(session) = UserSession::fetch_by_email(email.to_string()).await {
         match session.delete().await {
             Ok(_) => {
-                info!("Session Deleted Sucessfully");
-                println!("Success logging out");
+                info!("Session deleted sucessfully");
                 Ok(())
             }
             Err(err) => {
@@ -45,6 +44,7 @@ generate_endpoint! {
         tag: "session",
         responses: {
             (status = 200, description = "User logged out successfully"),
+            (status = 400, description = "Bad request"),
         }
     }
     params: {
@@ -57,8 +57,8 @@ generate_endpoint! {
                 Ok(HttpResponse::Ok().json("User has been logged out."))
             }
             Err(err) => {
-                error!("Internal error while logging out");
-                Err(ServerResponseError::InternalError(err.to_string()))
+                error!("Bad Request");
+                Err(ServerResponseError::BadRequest(err.to_string()))
             }
         }
     }
