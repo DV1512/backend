@@ -2,12 +2,15 @@ pub mod basic;
 pub mod error;
 pub mod github;
 pub mod google;
+pub mod local;
 pub(crate) mod provider;
 pub(crate) mod scopes;
-mod email;
+pub mod email;
 
 use crate::auth::oauth::github::{github_oauth_service, GithubOauth};
 use crate::auth::oauth::google::google_oauth_service;
+use crate::auth::oauth::local::local_oauth_service;
+use email::token;
 use actix_web::{web, Scope};
 use anyhow::Result;
 pub use google::GoogleOauth;
@@ -33,6 +36,7 @@ pub fn oauth_service() -> Scope {
     web::scope("/oauth")
         .service(google_oauth_service())
         .service(github_oauth_service())
+        .service(local_oauth_service())
         .service(token)
 }
 
@@ -47,8 +51,9 @@ struct OAuthCallbackQuery {
 
 use github::__path_login as __path_github_login;
 use google::*;
-use crate::auth::oauth::email::token;
+
+use local::__path_local_token;
 
 #[derive(OpenApi)]
-#[openapi(paths(google_login, github_login), components())]
+#[openapi(paths(google_login, github_login, local_token), components())]
 pub struct OauthApi;
