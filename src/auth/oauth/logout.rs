@@ -5,12 +5,13 @@ use actix_web::web;
 use actix_web::HttpResponse;
 use serde::Deserialize;
 use tracing::{error, info};
+use utoipa::{IntoParams, ToSchema};
 
 pub async fn end_user_session(email: String) -> Result<(), ServerResponseError> {
     if let Some(session) = UserSession::fetch_by_email(email.to_string()).await {
         match session.delete().await {
             Ok(_) => {
-                info!("Session deleted sucessfully");
+                info!("Session deleted successfully");
                 Ok(())
             }
             Err(err) => {
@@ -20,7 +21,7 @@ pub async fn end_user_session(email: String) -> Result<(), ServerResponseError> 
         }
     } else {
         error!("Error!");
-        return Err(ServerResponseError::NotFound);
+        Err(ServerResponseError::NotFound)
     }
 }
 
@@ -30,18 +31,18 @@ pub async fn logout_user(email: &str) -> Result<(), ServerResponseError> {
     Ok(())
 }
 
-#[derive(Deserialize, Debug)]
-struct LogoutRequest {
+#[derive(Deserialize, Debug, ToSchema, IntoParams)]
+pub(crate) struct LogoutRequest {
     email: String,
 }
 
 generate_endpoint! {
-    fn logout_endpoint;
+    fn logout;
     method: post;
     path: "/logout";
     docs: {
-        context_path: "/oauth",
         tag: "session",
+        params: (LogoutRequest),
         responses: {
             (status = 200, description = "User logged out successfully"),
             (status = 400, description = "Bad request"),
@@ -54,7 +55,7 @@ generate_endpoint! {
         let req_data = request.into_inner();
         match logout_user(&req_data.email).await{
             Ok(_) => {
-                Ok(HttpResponse::Ok().json("User has been logged out."))
+                Ok(HttpResponse::Ok())
             }
             Err(err) => {
                 error!("Bad Request");

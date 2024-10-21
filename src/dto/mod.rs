@@ -1,5 +1,5 @@
-pub(crate) mod user_info;
 pub(crate) mod access_token_request;
+pub(crate) mod user_info;
 
 use crate::models::thing::Thing;
 use serde::{Deserialize, Serialize};

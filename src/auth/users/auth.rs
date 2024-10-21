@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::auth::oauth::provider::OauthProvider;
+use serde::{Deserialize, Serialize};
 use surrealdb::sql::Datetime;
 
 #[allow(dead_code)]

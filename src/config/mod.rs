@@ -54,7 +54,5 @@ pub fn rate_limiter_data(
 }
 
 pub fn cors() -> Cors {
-    Cors::permissive()
-        .supports_credentials()
-        .allow_any_header()
+    Cors::permissive().supports_credentials().allow_any_header()
 }

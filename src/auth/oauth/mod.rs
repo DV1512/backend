@@ -2,8 +2,8 @@ pub mod basic;
 pub mod error;
 pub mod github;
 pub mod google;
-pub mod logout;
 pub mod local;
+pub mod logout;
 pub(crate) mod provider;
 pub(crate) mod scopes;
 
@@ -13,7 +13,7 @@ use crate::auth::oauth::local::token;
 use actix_web::{web, Scope};
 use anyhow::Result;
 pub use google::GoogleOauth;
-use logout::logout_endpoint;
+use logout::logout as logout_endpoint;
 use serde::Deserialize;
 use utoipa::{IntoParams, OpenApi};
 
@@ -52,8 +52,16 @@ struct OAuthCallbackQuery {
 use github::__path_login as __path_github_login;
 use google::*;
 
-use local::{__path_token, TokenRequest};
+use crate::models::refresh_token::RefreshToken;
+use local::{TokenRequest, TokenResponseExample, __path_token};
+use logout::{LogoutRequest, __path_logout};
 
 #[derive(OpenApi)]
-#[openapi(paths(google_login, github_login, token), components(schemas(TokenRequest)))]
+#[openapi(
+    paths(google_login, github_login, token, logout),
+    components(
+        schemas(TokenRequest, LogoutRequest, RefreshToken),
+        responses(TokenResponseExample)
+    )
+)]
 pub struct OauthApi;

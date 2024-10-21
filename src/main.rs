@@ -7,19 +7,20 @@ use crate::init_env::init_env;
 use crate::logging::init_tracing;
 use crate::middlewares::logger::{LogEntry, LoggingMiddleware};
 use crate::server_error::ServerError;
-use crate::state::{app_state, db, AppState};
+use crate::state::{app_state, AppState};
 use crate::swagger::{ApiDocs, DocsV1};
 use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
 use actix_extensible_rate_limit::backend::{SimpleInputFuture, SimpleOutput};
 use actix_extensible_rate_limit::RateLimiter;
-use actix_identity::{Identity, IdentityMiddleware};
+use actix_identity::IdentityMiddleware;
 use actix_session::config::PersistentSession;
 use actix_session::storage::CookieSessionStore;
-use actix_session::{Session, SessionMiddleware};
+use actix_session::SessionMiddleware;
 use actix_web::cookie::Key;
 use actix_web::dev::ServiceRequest;
+use actix_web::http::{header, StatusCode};
 use actix_web::middleware::NormalizePath;
-use actix_web::{get, web, HttpResponse, HttpServer, Responder};
+use actix_web::{get, web, HttpRequest, HttpResponse, HttpServer, Responder};
 use api_forge::{ApiRequest, Request};
 use helper_macros::generate_endpoint;
 use once_cell::sync::Lazy;
@@ -196,6 +197,29 @@ fn docs() -> impl actix_web::dev::HttpServiceFactory {
         .service(v1_docs())
 }
 
+async fn index(req: HttpRequest) -> impl Responder {
+    let path = req.path();
+
+    let html = format!(
+        r#"
+        <!doctype html>
+        <html>
+            <head>
+                <title>Error 404</title>
+            </head>
+            <body>
+                <h1>404 - Endpoint not defined</h1>
+                <p>Path: {path}</p>
+            </body>
+        </html>
+        "#,
+    );
+
+    HttpResponse::build(StatusCode::NOT_FOUND)
+        .insert_header(header::ContentType::html())
+        .body(html)
+}
+
 #[actix::main]
 async fn main() -> Result<(), ServerError> {
     init_env()?;
@@ -252,7 +276,7 @@ async fn main() -> Result<(), ServerError> {
                     .session_lifecycle(PersistentSession::default())
                     .build(),
             )
-            .default_service(web::to(|| HttpResponse::Ok()))
+            .default_service(web::to(index))
     })
     .bind(format!("0.0.0.0:{port}"))?
     .bind(format!("[::1]:{port}"))?
