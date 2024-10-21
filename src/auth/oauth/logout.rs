@@ -3,7 +3,7 @@ use crate::error::ServerResponseError;
 use crate::generate_endpoint;
 use actix_web::web;
 use actix_web::HttpResponse;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use tracing::{error, info};
 
 pub async fn end_user_session(email: String) -> Result<(), ServerResponseError> {
@@ -16,13 +16,11 @@ pub async fn end_user_session(email: String) -> Result<(), ServerResponseError> 
             }
             Err(err) => {
                 error!("Error!");
-                println!("NOT WORKING LOL");
                 Err(ServerResponseError::InternalError(err.to_string()))
             }
         }
     } else {
         error!("Error!");
-        println!("No such session.");
         return Err(ServerResponseError::NotFound);
     }
 }
