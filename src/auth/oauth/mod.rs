@@ -4,6 +4,7 @@ pub mod github;
 pub mod google;
 pub(crate) mod provider;
 pub(crate) mod scopes;
+mod email;
 
 use crate::auth::oauth::github::{github_oauth_service, GithubOauth};
 use crate::auth::oauth::google::google_oauth_service;
@@ -32,6 +33,7 @@ pub fn oauth_service() -> Scope {
     web::scope("/oauth")
         .service(google_oauth_service())
         .service(github_oauth_service())
+        .service(token)
 }
 
 #[allow(dead_code)]
@@ -45,6 +47,7 @@ struct OAuthCallbackQuery {
 
 use github::__path_login as __path_github_login;
 use google::*;
+use crate::auth::oauth::email::token;
 
 #[derive(OpenApi)]
 #[openapi(paths(google_login, github_login), components())]
