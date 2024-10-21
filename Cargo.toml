@@ -69,6 +69,7 @@ surrealdb-abstraction = { workspace = true }
 helper-macros = { path = "helper-macros" }
 actix-identity = { workspace = true }
 actix-session = { workspace = true }
+rand = { version = "0.8.5", default-features = false }
 
 [features]
 default = ["local"]

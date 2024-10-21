@@ -17,6 +17,12 @@ pub enum ServerResponseError {
     NotFound,
     #[error("Bad request: {0}")]
     BadRequest(String),
+    #[error("Unauthorized")]
+    Unauthorized,
+    #[error("Unauthorized: {0}")]
+    UnauthorizedWithMessage(String),
+    #[error(transparent)]
+    GenericError(#[from] anyhow::Error),
 }
 
 impl ResponseError for ServerResponseError {
@@ -28,6 +34,9 @@ impl ResponseError for ServerResponseError {
             ServerResponseError::QueryError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ServerResponseError::NotFound => StatusCode::NOT_FOUND,
             ServerResponseError::BadRequest(_) => StatusCode::BAD_REQUEST,
+            ServerResponseError::GenericError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            ServerResponseError::Unauthorized => StatusCode::UNAUTHORIZED,
+            ServerResponseError::UnauthorizedWithMessage(_) => StatusCode::UNAUTHORIZED,
         }
     }
 

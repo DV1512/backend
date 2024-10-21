@@ -1,4 +1,4 @@
-mod auth;
+pub(crate) mod auth;
 pub(crate) mod create;
 pub(crate) mod get;
 
