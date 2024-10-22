@@ -10,6 +10,7 @@ pub(crate) mod scopes;
 use crate::auth::oauth::github::{github_oauth_service, GithubOauth};
 use crate::auth::oauth::google::{google_oauth_service, GoogleOauth};
 use crate::auth::oauth::local::token;
+use actix_web::guard::Acceptable;
 use actix_web::{web, Scope};
 use anyhow::Result;
 use logout::logout as logout_endpoint;
@@ -36,6 +37,7 @@ pub fn oauth_service() -> Scope {
         .service(google_oauth_service())
         .service(github_oauth_service())
         .service(logout_endpoint)
+        .guard(Acceptable::new(mime::APPLICATION_JSON).match_star_star())
         .service(token)
 }
 
@@ -51,15 +53,15 @@ struct OAuthCallbackQuery {
 use github::__path_login as __path_github_login;
 use google::*;
 
-use crate::models::refresh_token::RefreshToken;
-use local::{TokenRequest, TokenResponseExample, __path_token};
+use crate::models::{access_token::AccessToken, refresh_token::RefreshToken};
+use local::{TokenRequest, TokenResponse, TokenResponseExample, TokenType, __path_token};
 use logout::__path_logout;
 
 #[derive(OpenApi)]
 #[openapi(
     paths(google_login, github_login, token, logout),
     components(
-        schemas(TokenRequest, RefreshToken),
+        schemas(TokenRequest, AccessToken, RefreshToken, TokenResponse, TokenType),
         responses(TokenResponseExample)
     )
 )]

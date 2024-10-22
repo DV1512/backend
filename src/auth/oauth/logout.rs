@@ -1,8 +1,8 @@
 use crate::auth::session::UserSession;
 use crate::error::ServerResponseError;
+use crate::extractors::Auth;
 use crate::generate_endpoint;
-use actix_identity::Identity;
-use actix_web::HttpResponse;
+use actix_web::{Either, HttpResponse};
 use tracing::info;
 
 pub async fn delete_session(token: String) -> Result<(), ServerResponseError> {
@@ -21,7 +21,7 @@ generate_endpoint! {
     method: get;
     path: "/logout";
     docs: {
-        tag: "session",
+        tag: "oauth",
         responses: {
             (status = 200, description = "User logged out successfully"),
             (status = 401, description = "Not logged in"),
@@ -30,13 +30,21 @@ generate_endpoint! {
         }
     }
     params: {
-        token: Identity
+        token: Auth
     };
     {
-        let access_token = token.id()?;
-        delete_session(access_token).await?;
+        let token = match token {
+            Either::Left(identity) => {
+                let access_token = identity.id()?;
+                identity.logout();
+                access_token
+            },
+            Either::Right(bearer) => {
+                bearer.token().to_string()
+            },
+        };
 
-        token.logout();
+        delete_session(token).await?;
 
         Ok(HttpResponse::Ok().finish())
     }

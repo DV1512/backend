@@ -85,7 +85,7 @@ macro_rules! define_oauth_client {
 
                 let user = user_info;
 
-                let db_user = crate::auth::users::get_user(db, &user.email).await;
+                let db_user = crate::auth::users::get::get_user(db, &user.email).await;
 
                 let record = match db_user {
                     None => {

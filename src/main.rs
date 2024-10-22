@@ -44,6 +44,7 @@ mod auth;
 mod config;
 mod dto;
 mod error;
+mod extractors;
 mod init_env;
 mod logging;
 mod middlewares;

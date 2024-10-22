@@ -1,13 +1,11 @@
 use crate::auth::session::UserSession;
-use crate::auth::UserInfo;
 use crate::error::ServerResponseError;
-use crate::models::refresh_token::RefreshToken;
+use crate::models::{access_token::AccessToken, refresh_token::RefreshToken};
 use crate::state::AppState;
 use actix_identity::Identity;
 use actix_web::http::header::CacheDirective;
 use actix_web::{http::header, web, HttpMessage, HttpRequest, HttpResponse};
 use helper_macros::generate_endpoint;
-use oauth2::AccessToken;
 use rand::{
     distributions::{Alphanumeric, DistString},
     thread_rng,
@@ -84,11 +82,19 @@ impl IntoParams for TokenRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub(crate) struct TokenResponse<'a> {
+pub(crate) struct TokenResponse {
     access_token: AccessToken,
     refresh_token: RefreshToken,
-    token_type: &'a str,
+    token_type: TokenType,
     expires_in: usize,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema, Default)]
+#[serde(rename_all = "lowercase")]
+pub(crate) enum TokenType {
+    #[default]
+    Bearer,
+    Basic,
 }
 
 #[derive(ToResponse)]
@@ -102,7 +108,7 @@ pub enum TokenResponseExample {
                 "expires_in": 3600
             }), description = "Successful access token request and the credentials are returned", summary = "Successful access token request"))
     ))]
-    User(#[content("application/json")] UserInfo),
+    Success(#[content("application/json")] TokenResponse),
 }
 
 /// Returns a random alphanumeric string of length `length`.
@@ -110,12 +116,12 @@ fn random_string(length: usize) -> String {
     Alphanumeric.sample_string(&mut thread_rng(), length)
 }
 
-impl<'a> TokenResponse<'a> {
+impl TokenResponse {
     fn new() -> Self {
         Self {
             access_token: AccessToken::new(random_string(50)),
             refresh_token: RefreshToken::new(random_string(50)),
-            token_type: "bearer",
+            token_type: TokenType::default(),
             expires_in: 3600,
         }
     }
@@ -134,7 +140,7 @@ generate_endpoint! {
     method: post;
     path: "/token";
     docs: {
-        tag: "token",
+        tag: "oauth",
         responses: {
             (status = 200, response = TokenResponseExample),
             (status = 404, description = "User not found or invalid credentials"),

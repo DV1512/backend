@@ -3,6 +3,7 @@ pub(crate) mod utils;
 use crate::auth::users::get::utils::get_user_by_token;
 use crate::auth::UserInfo;
 use crate::dto::UserInfoDTO;
+use crate::extractors::Auth;
 use crate::AppState;
 use actix_web::{web, HttpResponse, Responder};
 use anyhow::Result;
@@ -12,7 +13,7 @@ use std::sync::Arc;
 use surrealdb::Surreal;
 use tosic_utils::{Select, Statement};
 use tracing::{error, info};
-use utoipa::IntoParams;
+use utoipa::{IntoParams, ToSchema};
 
 #[tracing::instrument(skip(db))]
 pub async fn get_user_by_username<T>(db: &Arc<Surreal<T>>, username: &str) -> Result<UserInfo>
@@ -60,7 +61,7 @@ where
     get_user_by_email(db, email).await.ok()
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, IntoParams)]
+#[derive(Serialize, Deserialize, Debug, Clone, IntoParams, ToSchema)]
 pub struct GetUserBy {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[param(example = "johndoe")]
@@ -149,6 +150,7 @@ generate_endpoint! {
         }
     }
     params: {
+        _auth: Auth,
         state: web::Data<AppState>,
         data: web::Query<GetUserBy>,
     };
