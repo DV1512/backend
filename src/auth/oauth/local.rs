@@ -170,8 +170,7 @@ generate_endpoint! {
                     let user_id = user.id.clone();
                     let response = TokenResponse::new();
 
-                    let mut session = UserSession::new(response.access_token.secret().to_string(), Some(response.refresh_token.secret().to_string()), username, user_id.clone());
-                    session.email = user.email;
+                    let session = UserSession::new(response.access_token.secret().to_string(), Some(response.refresh_token.secret().to_string()), user.email, user_id.clone());
                     let id = user_id.to_string();
                     Identity::login(&req.extensions(), id).unwrap();
                     session.create().await?;
