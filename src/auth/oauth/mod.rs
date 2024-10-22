@@ -53,13 +53,13 @@ use google::*;
 
 use crate::models::refresh_token::RefreshToken;
 use local::{TokenRequest, TokenResponseExample, __path_token};
-use logout::{LogoutRequest, __path_logout};
+use logout::__path_logout;
 
 #[derive(OpenApi)]
 #[openapi(
     paths(google_login, github_login, token, logout),
     components(
-        schemas(TokenRequest, LogoutRequest, RefreshToken),
+        schemas(TokenRequest, RefreshToken),
         responses(TokenResponseExample)
     )
 )]

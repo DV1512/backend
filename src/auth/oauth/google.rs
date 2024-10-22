@@ -123,7 +123,7 @@ generate_endpoint! {
         {
             Ok(session) => {
                 let redirect_url = format!("{}users?token={}", frontend_url, session.access_token);
-                Identity::login(&req.extensions(), session.id.expect("Failed to get user id").to_string()).unwrap();
+                Identity::login(&req.extensions(), session.access_token.clone()).unwrap();
 
                 Ok(HttpResponse::Found()
                     .append_header(("Location", redirect_url))

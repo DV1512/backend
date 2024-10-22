@@ -1,4 +1,5 @@
 #![feature(async_closure)]
+#![feature(duration_constructors)]
 
 use crate::auth::oauth::oauth_service;
 use crate::auth::users::user_service;
@@ -25,6 +26,7 @@ use api_forge::{ApiRequest, Request};
 use helper_macros::generate_endpoint;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
+use std::time::Duration;
 use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::sql::Thing;
 use surrealdb::Surreal;
@@ -199,6 +201,7 @@ fn docs() -> impl actix_web::dev::HttpServiceFactory {
 
 async fn index(req: HttpRequest) -> impl Responder {
     let path = req.path();
+    error!("Path not found: {}", path);
 
     let html = format!(
         r#"
@@ -260,6 +263,9 @@ async fn main() -> Result<(), ServerError> {
         let cors = cors();
         let limiter = rate_limiter(rate_limit_backend.clone(), max_requests, limit_duration);
         let logger = LoggingMiddleware::new(log_sender.clone());
+        let identity = IdentityMiddleware::builder()
+            .login_deadline(Some(Duration::from_hours(1)))
+            .build();
 
         actix_web::App::new()
             .app_data(state.clone())
@@ -269,7 +275,7 @@ async fn main() -> Result<(), ServerError> {
             .service(health_check)
             .service(api(limiter, logger))
             .wrap(cors)
-            .wrap(IdentityMiddleware::default())
+            .wrap(identity)
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), key.clone())
                     .cookie_same_site(actix_web::cookie::SameSite::None)

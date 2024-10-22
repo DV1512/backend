@@ -1,66 +1,43 @@
 use crate::auth::session::UserSession;
 use crate::error::ServerResponseError;
 use crate::generate_endpoint;
-use actix_web::web;
+use actix_identity::Identity;
 use actix_web::HttpResponse;
-use serde::Deserialize;
-use tracing::{error, info};
-use utoipa::{IntoParams, ToSchema};
+use tracing::info;
 
-pub async fn end_user_session(email: String) -> Result<(), ServerResponseError> {
-    if let Some(session) = UserSession::fetch_by_email(email.to_string()).await {
-        match session.delete().await {
-            Ok(_) => {
-                info!("Session deleted successfully");
-                Ok(())
-            }
-            Err(err) => {
-                error!("Error!");
-                Err(ServerResponseError::InternalError(err.to_string()))
-            }
-        }
-    } else {
-        error!("Error!");
-        Err(ServerResponseError::NotFound)
-    }
-}
+pub async fn delete_session(token: String) -> Result<(), ServerResponseError> {
+    let session = UserSession::fetch_by_access_token(token)
+        .await
+        .ok_or(ServerResponseError::NotFound)?;
+    session.delete().await?;
 
-pub async fn logout_user(email: &str) -> Result<(), ServerResponseError> {
-    end_user_session(email.to_string()).await?;
-    info!("Logged out!");
+    info!("Session deleted successfully");
+
     Ok(())
-}
-
-#[derive(Deserialize, Debug, ToSchema, IntoParams)]
-pub(crate) struct LogoutRequest {
-    email: String,
 }
 
 generate_endpoint! {
     fn logout;
-    method: post;
+    method: get;
     path: "/logout";
     docs: {
         tag: "session",
-        params: (LogoutRequest),
         responses: {
             (status = 200, description = "User logged out successfully"),
-            (status = 400, description = "Bad request"),
+            (status = 401, description = "Not logged in"),
+            (status = 404, description = "User not found or invalid credentials"),
+            (status = 500, description = "An error occurred when deleting the session from the database"),
         }
     }
     params: {
-        request: web::Query<LogoutRequest>
+        token: Identity
     };
     {
-        let req_data = request.into_inner();
-        match logout_user(&req_data.email).await{
-            Ok(_) => {
-                Ok(HttpResponse::Ok())
-            }
-            Err(err) => {
-                error!("Bad Request");
-                Err(ServerResponseError::BadRequest(err.to_string()))
-            }
-        }
+        let access_token = token.id()?;
+        delete_session(access_token).await?;
+
+        token.logout();
+
+        Ok(HttpResponse::Ok().finish())
     }
 }

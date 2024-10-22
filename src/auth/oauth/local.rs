@@ -169,10 +169,10 @@ generate_endpoint! {
                     let user = query_result.clone().unwrap();
                     let user_id = user.id.clone();
                     let response = TokenResponse::new();
+                    let token = response.access_token.secret().to_string();
 
-                    let session = UserSession::new(response.access_token.secret().to_string(), Some(response.refresh_token.secret().to_string()), user.email, user_id.clone());
-                    let id = user_id.to_string();
-                    Identity::login(&req.extensions(), id).unwrap();
+                    let session = UserSession::new(token.clone(), Some(response.refresh_token.secret().to_string()), user.email, user_id);
+                    Identity::login(&req.extensions(), token).unwrap();
                     session.create().await?;
 
                     Ok(HttpResponse::Ok()

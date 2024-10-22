@@ -26,6 +26,8 @@ pub enum ServerResponseError {
     #[error("Unauthorized: {0}")]
     UnauthorizedWithMessage(String),
     #[error(transparent)]
+    GetIdentityError(#[from] actix_identity::error::GetIdentityError),
+    #[error(transparent)]
     GenericError(#[from] anyhow::Error),
 }
 
@@ -43,6 +45,7 @@ impl ResponseError for ServerResponseError {
             ServerResponseError::UnauthorizedWithMessage(_) => StatusCode::UNAUTHORIZED,
             ServerResponseError::NotImplemented => StatusCode::NOT_IMPLEMENTED,
             ServerResponseError::NotImplementedWithMessage(_) => StatusCode::NOT_IMPLEMENTED,
+            ServerResponseError::GetIdentityError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 
