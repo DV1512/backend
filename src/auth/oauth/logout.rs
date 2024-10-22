@@ -27,7 +27,11 @@ generate_endpoint! {
             (status = 401, description = "Not logged in"),
             (status = 404, description = "User not found or invalid credentials"),
             (status = 500, description = "An error occurred when deleting the session from the database"),
-        }
+        },
+        security: [
+            ("bearer_token" = []),
+            ("cookie_session" = []),
+        ]
     }
     params: {
         token: Auth

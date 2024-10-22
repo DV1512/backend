@@ -22,7 +22,10 @@ impl FromRequest for Bearer {
 
         match token_result {
             Ok(token) => Box::pin(async move {
-                if UserSession::fetch_by_access_token(token.token().to_string()).await.is_none() {
+                if UserSession::fetch_by_access_token(token.token().to_string())
+                    .await
+                    .is_none()
+                {
                     warn!("Unauthorized access token: {}", token.token());
                     return Err(ErrorUnauthorized("Unauthorized"));
                 }

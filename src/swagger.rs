@@ -2,6 +2,7 @@ use crate::__path_health_check;
 use crate::models::{datetime::Datetime, thing::Thing};
 use utoipa::{Modify, OpenApi};
 
+use utoipa::openapi::security::{ApiKey, ApiKeyValue, HttpAuthScheme, HttpBuilder, SecurityScheme};
 use utoipa::openapi::OpenApi as OpenApiSpec;
 
 /// Constructs a new struct that implements [`Modify`] trait for [`utoipa`] documentation.
@@ -52,6 +53,32 @@ impl Modify for NormalizePath {
     }
 }
 
+pub struct OpenApiSecurityConfig;
+
+impl Modify for OpenApiSecurityConfig {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        let bearer = SecurityScheme::Http(
+            HttpBuilder::new()
+                .scheme(HttpAuthScheme::Bearer)
+                .description(Some("Bearer auth"))
+                .build(),
+        );
+        let cookie = SecurityScheme::ApiKey(ApiKey::Cookie(ApiKeyValue::new("id")));
+
+        if let Some(components) = &mut openapi.components {
+            components.add_security_scheme("bearer_token", bearer);
+            components.add_security_scheme("cookie_session", cookie);
+        } else {
+            openapi.components = Some(
+                utoipa::openapi::ComponentsBuilder::new()
+                    .security_scheme("bearer_token", bearer)
+                    .security_scheme("cookie_session", cookie)
+                    .build(),
+            );
+        }
+    }
+}
+
 #[derive(OpenApi)]
 #[openapi(
     nest(
@@ -78,6 +105,6 @@ pub struct DocsV1;
     tags(
         (name = "health", description = "Health check")
     ),
-    modifiers(&NormalizePath)
+    modifiers(&NormalizePath, &OpenApiSecurityConfig)
 )]
 pub struct ApiDocs;

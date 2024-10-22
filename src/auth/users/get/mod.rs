@@ -147,7 +147,11 @@ generate_endpoint! {
         responses: {
             (status = 200, response = UserInfoExampleResponses),
             (status = 404, description = "User not found"),
-        }
+        },
+        security: [
+            ("bearer_token" = []),
+            ("cookie_session" = []),
+        ]
     }
     params: {
         _auth: Auth,

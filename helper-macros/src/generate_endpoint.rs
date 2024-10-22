@@ -3,7 +3,7 @@ use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::punctuated::Punctuated;
 use syn::{
-    parenthesized,
+    bracketed, parenthesized,
     parse::{Parse, ParseStream},
     parse_macro_input, Attribute, Block, Ident, LitInt, LitStr, Token, Type,
 };
@@ -79,6 +79,7 @@ pub(crate) fn generate_endpoint_internal(input: TokenStream) -> TokenStream1 {
         let tag = docs.tag;
         let responses = docs.responses;
         let doc_params = docs.params;
+        let security = docs.security;
 
         // Create a vector for optional attributes, and only include non-empty tokens
         let mut doc_tokens = vec![];
@@ -111,6 +112,24 @@ pub(crate) fn generate_endpoint_internal(input: TokenStream) -> TokenStream1 {
 
         if let Some(doc_params) = doc_params {
             doc_tokens.push(quote! { params( #( #doc_params ),* ) });
+        }
+
+        if let Some(security) = security {
+            let security_iter = security
+                .iter()
+                .map(|security| {
+                    if let Some(name) = &security.name {
+                        let scopes = &security.scopes;
+                        quote! {
+                            (#name = [#( #scopes ),*])
+                        }
+                    } else {
+                        quote! { () }
+                    }
+                })
+                .collect::<Vec<_>>();
+
+            doc_tokens.push(quote! { security( #( #security_iter ),* ) });
         }
 
         // Join the doc tokens with commas only between non-empty tokens
@@ -190,7 +209,39 @@ pub(crate) struct Documentation {
     context_path: Option<LitStr>,
     tag: Option<LitStr>,
     responses: Option<Vec<Response>>,
+    security: Option<Vec<SecurityRequirement>>,
     params: Option<Vec<Ident>>,
+}
+
+#[derive(Debug)]
+pub(crate) struct SecurityRequirement {
+    name: Option<LitStr>,
+    scopes: Vec<LitStr>,
+}
+
+impl Parse for SecurityRequirement {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let name;
+        let mut scopes = Vec::new();
+
+        let content;
+        parenthesized!(content in input);
+
+        name = content.parse().ok();
+
+        if let Some(_name) = &name {
+            content.parse::<Token![=]>()?;
+
+            let bracketed;
+            bracketed!(bracketed in content);
+
+            let parsed_scopes = Punctuated::<LitStr, Token![,]>::parse_terminated(&bracketed)?;
+
+            scopes = parsed_scopes.into_iter().collect();
+        }
+
+        Ok(Self { name, scopes })
+    }
 }
 
 impl Parse for Documentation {
@@ -199,6 +250,7 @@ impl Parse for Documentation {
         let mut tag: Option<LitStr> = None;
         let mut responses: Option<Vec<Response>> = None;
         let mut params: Option<Vec<Ident>> = None;
+        let mut security: Option<Vec<SecurityRequirement>> = None;
 
         // Parse in a loop, allowing fields in any order
         while !input.is_empty() {
@@ -208,19 +260,19 @@ impl Parse for Documentation {
             match ident.to_string().as_str() {
                 "context_path" => {
                     if context_path.is_some() {
-                        return Err(syn::Error::new_spanned(ident, "Duplicate context_path"));
+                        return Err(input.error("Duplicate context_path"));
                     }
                     context_path = Some(input.parse()?);
                 }
                 "tag" => {
                     if tag.is_some() {
-                        return Err(syn::Error::new_spanned(ident, "Duplicate tag"));
+                        return Err(input.error("Duplicate tag"));
                     }
                     tag = Some(input.parse()?);
                 }
                 "responses" => {
                     if responses.is_some() {
-                        return Err(syn::Error::new_spanned(ident, "Duplicate responses"));
+                        return Err(input.error("Duplicate responses"));
                     }
                     let content;
                     syn::braced!(content in input); // Expect a block around the responses
@@ -229,13 +281,29 @@ impl Parse for Documentation {
                     responses = Some(parsed_responses.into_iter().collect());
                 }
                 "params" => {
+                    if params.is_some() {
+                        return Err(input.error("Duplicate params"));
+                    }
+
                     let content;
                     parenthesized!(content in input);
 
                     let parsed_params = Punctuated::<Ident, Token![,]>::parse_terminated(&content)?;
                     params = Some(parsed_params.into_iter().collect());
                 }
-                _ => return Err(syn::Error::new_spanned(ident, "Unexpected field")),
+                "security" => {
+                    if security.is_some() {
+                        return Err(input.error("Duplicate security"));
+                    }
+
+                    let content;
+                    bracketed!(content in input);
+                    let parsed_security =
+                        Punctuated::<SecurityRequirement, Token![,]>::parse_terminated(&content)?;
+
+                    security = Some(parsed_security.into_iter().collect());
+                }
+                unknown => return Err(input.error(format!("Unknown field: {}", unknown))),
             }
 
             // Optionally consume a comma if present
@@ -249,6 +317,7 @@ impl Parse for Documentation {
             tag,
             responses,
             params,
+            security,
         })
     }
 }
