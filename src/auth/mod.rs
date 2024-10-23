@@ -89,13 +89,22 @@ pub(crate) async fn create_auth_for_user(
         bail!("User requires password. Please provide one.");
     }
 
-    let sql = "CREATE user_auth set providers = $providers, password = $password";
+    let mut res = if password.is_some() {
+        let sql = "CREATE user_auth set providers = $providers, password = $password";
 
-    let mut res = INTERNAL_DB
-        .query(sql)
-        .bind(("providers", providers_ids))
-        .bind(("password", password))
-        .await?;
+        INTERNAL_DB
+            .query(sql)
+            .bind(("providers", providers_ids))
+            .bind(("password", password))
+            .await?
+    } else {
+        let sql = "CREATE user_auth set providers = $providers";
+
+        INTERNAL_DB
+            .query(sql)
+            .bind(("providers", providers_ids))
+            .await?
+    };
 
     let user_auth: Option<AuthForRelation> = res.take(0)?;
 
