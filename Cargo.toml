@@ -60,11 +60,11 @@ reqwest = { workspace = true }
 chrono = "0.4.38"
 once_cell = { workspace = true }
 futures = "0.3.31"
-utoipa = { version = "5.0.0-beta.0", features = ["actix_extras", "debug"] }
-utoipa-swagger-ui = { version = "7.1.1-beta.0", features = ["actix-web"] }
-utoipa-redoc = { version = "4.0.1-beta.0", features = ["actix-web"] }
-utoipa-rapidoc = { version = "4.0.1-beta.0", features = ["actix-web"] }
-utoipa-scalar = { version = "0.2.0-beta.0", features = ["actix-web"] }
+utoipa = { version = "5.1.2", features = ["actix_extras", "debug"] }
+utoipa-swagger-ui = { version = "8.0.3", features = ["actix-web"] }
+utoipa-redoc = { version = "5.0.0", features = ["actix-web"] }
+utoipa-rapidoc = { version = "5.0.0", features = ["actix-web"] }
+utoipa-scalar = { version = "0.2.0", features = ["actix-web"] }
 surrealdb-abstraction = { workspace = true }
 helper-macros = { path = "helper-macros" }
 actix-identity = { workspace = true }

@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use tosic_utils::wrap_external_type;
-use utoipa::openapi;
+use utoipa::openapi::{RefOr, Schema};
+use utoipa::{openapi, PartialSchema};
 
 wrap_external_type! {
     #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -13,14 +14,13 @@ impl RefreshToken {
     }
 }
 
-impl<'__s> utoipa::ToSchema<'__s> for RefreshToken {
-    fn schema() -> (&'__s str, openapi::RefOr<openapi::schema::Schema>) {
-        (
-            "RefreshToken",
-            openapi::schema::ObjectBuilder::new()
-                .schema_type(openapi::schema::Type::String)
-                .description(Some("Refresh token"))
-                .into(),
-        )
+impl PartialSchema for RefreshToken {
+    fn schema() -> RefOr<Schema> {
+        openapi::schema::ObjectBuilder::new()
+            .schema_type(openapi::schema::Type::String)
+            .description(Some("Refresh token"))
+            .into()
     }
 }
+
+impl utoipa::ToSchema for RefreshToken {}

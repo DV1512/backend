@@ -1,5 +1,6 @@
 use crate::__path_health_check;
 use crate::models::{datetime::Datetime, thing::Thing};
+use std::collections::BTreeMap;
 use utoipa::{Modify, OpenApi};
 
 use utoipa::openapi::security::{ApiKey, ApiKeyValue, HttpAuthScheme, HttpBuilder, SecurityScheme};
@@ -16,15 +17,16 @@ macro_rules! version_prefix {
 
         impl Modify for $name {
             fn modify(&self, openapi: &mut OpenApiSpec) {
-                let paths = &openapi.paths;
+                let paths = openapi.paths.paths.clone();
+                let mut new_paths = BTreeMap::new();
 
-                let mut new_paths = utoipa::openapi::path::Paths::new();
+                paths.iter().for_each(|(path, item)| {
+                    let new_path = &format!("/api/{}{}", $version, path);
 
-                for (path, path_item) in paths.paths.clone() {
-                    new_paths.add_path(format!("/api/{}{}", $version, path), path_item);
-                }
+                    new_paths.insert(new_path.clone(), item.clone());
+                });
 
-                openapi.paths = new_paths;
+                openapi.paths.paths = new_paths;
             }
         }
     };
@@ -39,17 +41,16 @@ struct NormalizePath;
 
 impl Modify for NormalizePath {
     fn modify(&self, openapi: &mut OpenApiSpec) {
-        let paths = &openapi.paths;
+        let paths = openapi.paths.paths.clone();
+        let mut new_paths = BTreeMap::new();
 
-        let mut new_paths = utoipa::openapi::path::Paths::new();
+        paths.iter().for_each(|(path, item)| {
+            let new_path = &path.replace("//", "/");
 
-        for (path, path_item) in paths.paths.clone() {
-            let new_path = path.replace("//", "/");
+            new_paths.insert(new_path.clone(), item.clone());
+        });
 
-            new_paths.add_path(new_path, path_item);
-        }
-
-        openapi.paths = new_paths;
+        openapi.paths.paths = new_paths;
     }
 }
 
