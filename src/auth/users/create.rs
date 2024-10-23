@@ -1,7 +1,11 @@
 use anyhow::{bail, Result};
 use std::sync::Arc;
+use surrealdb::sql::thing;
 use surrealdb::Surreal;
 
+use surrealdb::sql::statements::{BeginStatement, CommitStatement};
+
+use crate::auth::oauth::register::UserRegistrationRequest;
 use crate::auth::UserInfo;
 use crate::Record;
 
@@ -21,6 +25,60 @@ where
         .bind(("email", user.email.clone()))
         .bind(("picture", user.picture.clone()))
         .bind(("role", user.role.clone()))
+        .await?;
+
+    let records: Vec<Record> = res.take(0)?;
+
+    let record = if let Some(record) = records.into_iter().next() {
+        record
+    } else {
+        bail!("Error creating user");
+    };
+
+    Ok(record)
+}
+
+pub async fn register_user<T>(
+    db: &Arc<Surreal<T>>,
+    user_registration: UserRegistrationRequest,
+) -> Result<Record>
+where
+    T: surrealdb::Connection,
+{
+    let password = user_registration.password.clone();
+    let user = UserInfo::from(user_registration);
+
+    let create_user_sql = "
+        LET $USER = (CREATE user SET
+        username = $username
+        url_safe_username = $url_safe_username
+        first_name = $first_name
+        last_name = $last_name
+        email = $email
+        picture = $picture
+        role = $role)";
+    let create_user_auth_sql = "
+        LET $USER_AUTH = (CREATE user_auth SET                                          )
+                          providers = $providers
+                          password = crypto::argon2::generate('$password')";
+    let relate_sql = "RELATE ($user_auth.id) -> auth_for -> ($user.id)";
+
+    let provider = vec![thing("provider:Email").unwrap()];
+    let mut res = db
+        .query(BeginStatement::default())
+        .query(create_user_sql)
+        .bind(("username", user.username))
+        .bind(("url_safe_username", user.url_safe_username))
+        .bind(("first_name", user.first_name))
+        .bind(("last_name", user.last_name))
+        .bind(("email", user.email))
+        .bind(("picture", user.picture))
+        .bind(("role", user.role))
+        .query(create_user_auth_sql)
+        .bind(("providers", provider))
+        .bind(("password", password))
+        .query(relate_sql)
+        .query(CommitStatement::default())
         .await?;
 
     let records: Vec<Record> = res.take(0)?;

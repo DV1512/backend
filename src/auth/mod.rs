@@ -89,6 +89,7 @@ pub(crate) async fn create_auth_for_user(
         bail!("User requires password. Please provide one.");
     }
 
+    let sql = "CREATE user_auth set providers = $providers, password = crypto::argon2::generate('$password')";
     let mut res = if password.is_some() {
         let sql = "CREATE user_auth set providers = $providers, password = $password";
 

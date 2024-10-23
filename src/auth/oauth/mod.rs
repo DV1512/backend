@@ -5,11 +5,13 @@ pub mod google;
 pub mod local;
 pub mod logout;
 pub(crate) mod provider;
+pub mod register;
 pub(crate) mod scopes;
 
 use crate::auth::oauth::github::{github_oauth_service, GithubOauth};
 use crate::auth::oauth::google::{google_oauth_service, GoogleOauth};
 use crate::auth::oauth::local::token;
+use crate::auth::oauth::register::register_endpoint;
 use actix_web::guard::Acceptable;
 use actix_web::{web, Scope};
 use anyhow::Result;
@@ -39,6 +41,7 @@ pub fn oauth_service() -> Scope {
         .service(logout_endpoint)
         .guard(Acceptable::new(mime::APPLICATION_JSON).match_star_star())
         .service(token)
+        .service(register_endpoint)
 }
 
 #[allow(dead_code)]
@@ -60,9 +63,6 @@ use logout::__path_logout;
 #[derive(OpenApi)]
 #[openapi(
     paths(google_login, github_login, token, logout),
-    components(
-        schemas(TokenRequest, AccessToken, RefreshToken, TokenResponse, TokenType),
-        responses(TokenResponseExample)
-    )
+    components(schemas(TokenRequest, RefreshToken), responses(TokenResponseExample))
 )]
 pub struct OauthApi;

@@ -794,6 +794,7 @@ dependencies = [
  "actix-ws",
  "anyhow",
  "api-forge",
+ "argon2",
  "chrono",
  "dotenv",
  "futures",
