@@ -56,8 +56,8 @@ struct OAuthCallbackQuery {
 use github::__path_login as __path_github_login;
 use google::*;
 
-use crate::models::{access_token::AccessToken, refresh_token::RefreshToken};
-use local::{TokenRequest, TokenResponse, TokenResponseExample, TokenType, __path_token};
+use crate::models::refresh_token::RefreshToken;
+use local::{TokenRequest,  TokenResponseExample,  __path_token};
 use logout::__path_logout;
 
 #[derive(OpenApi)]

@@ -1,13 +1,10 @@
+use crate::auth::oauth::register::{UserRegistration, UserRegistrationRequest};
+use crate::auth::UserInfo;
+use crate::Record;
 use anyhow::{bail, Result};
 use std::sync::Arc;
 use surrealdb::sql::thing;
 use surrealdb::Surreal;
-
-//use surrealdb::sql::statements::{BeginStatement, CommitStatement};
-
-use crate::auth::oauth::register::UserRegistrationRequest;
-use crate::auth::UserInfo;
-use crate::Record;
 
 #[tracing::instrument(skip(db, user))]
 pub async fn create_user<T>(db: &Arc<Surreal<T>>, user: UserInfo) -> Result<Record>
@@ -48,22 +45,6 @@ where
     let password = user_registration.password.clone();
     let user = UserInfo::from(user_registration);
 
-    // let create_user_sql = "
-    //     LET $USER = (CREATE user SET
-    //     username = $username,
-    //     url_safe_username = $url_safe_username,
-    //     first_name = $first_name,
-    //     last_name = $last_name,
-    //     email = $email,
-    //     picture = $picture,
-    //     role = $role);";
-    // let create_user_auth_sql = "
-    //     LET $USER_AUTH = (CREATE user_auth SET 
-    //                       providers = $providers,
-    //                       password = crypto::argon2::generate('$password'));";
-    // let relate_sql = "RELATE ($USER_AUTH.id) -> auth_for -> ($USER.id);";
-    // let full_sql: String = format!("{}\n{}\n{}", create_user_sql, create_user_auth_sql, relate_sql);
-
     const REGISTER_USER_SQL: &str = "
         BEGIN TRANSACTION;
 
@@ -102,11 +83,11 @@ where
         .bind(("providers", provider))
         .bind(("password", password));
 
-    let records: Vec<Record> = full_query.await?.take(0)?;
-    let record = if let Some(record) = records.into_iter().next() {
-        record
-    } else {
-        bail!("Error creating user");
+    let Some(user_reg): Option<UserRegistration> = full_query.await?.take(2)? else {
+        bail!("Failed to register user.");
     };
-    Ok(record)
+    let rec = Record {
+        id: user_reg.id_user,
+    };
+    Ok(rec)
 }
