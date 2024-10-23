@@ -5,14 +5,16 @@ use crate::auth::UserInfo;
 use crate::dto::UserInfoDTO;
 use crate::extractors::Auth;
 use crate::AppState;
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::web;
 use anyhow::Result;
 use helper_macros::generate_endpoint;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use surrealdb::Surreal;
 use tosic_utils::{Select, Statement};
-use tracing::{error, info};
+use tracing::info;
+use utoipa::openapi::path::{Parameter, ParameterBuilder, ParameterIn};
+use utoipa::openapi::{KnownFormat, Object, ObjectBuilder, SchemaFormat, Type};
 use utoipa::{IntoParams, ToSchema};
 
 #[tracing::instrument(skip(db))]
@@ -61,76 +63,65 @@ where
     get_user_by_email(db, email).await.ok()
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, IntoParams, ToSchema)]
-pub struct GetUserBy {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[param(example = "johndoe")]
-    pub username: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[param(example = "johndoe@example.com")]
-    pub email: Option<String>,
-    #[param(example = "token123")]
-    pub token: Option<String>,
-}
-
 #[tracing::instrument(skip(db, data))]
 pub(crate) async fn get_user_by_internal<T>(
     db: &Arc<Surreal<T>>,
     data: &GetUserBy,
-) -> Result<impl Responder, ServerResponseError>
+) -> Result<UserInfoDTO, ServerResponseError>
 where
     T: surrealdb::Connection,
 {
-    if data.email.is_none() && data.token.is_none() && data.username.is_none() {
-        return Err(ServerResponseError::BadRequest(
-            "No data provided".to_string(),
-        ));
+    match data {
+        GetUserBy::Email { email } => get_user_by_email(db, email).await,
+        GetUserBy::Username { username } => get_user_by_username(db, username).await,
+        GetUserBy::Token { token } => get_user_by_token(db, token).await,
     }
+    .map_err(|_| ServerResponseError::NotFound)
+    .map(|user| user.into())
+}
 
-    if let Some(email) = &data.email {
-        let user = match get_user_by_email(db, email).await {
-            Ok(user) => user,
-            Err(e) => {
-                error!("Failed to get user by email: {:?}", e);
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
+#[serde(untagged)]
+pub(crate) enum GetUserBy {
+    Username { username: String },
+    Email { email: String },
+    Token { token: String },
+}
 
-                return Err(ServerResponseError::NotFound);
-            }
-        };
+impl IntoParams for GetUserBy {
+    fn into_params(parameter_in_provider: impl Fn() -> Option<ParameterIn>) -> Vec<Parameter> {
+        let parameter_in = parameter_in_provider().unwrap_or(ParameterIn::Query);
+        let mut params = vec![ParameterBuilder::new()
+            .name("username")
+            .description(Some("User's username"))
+            .schema::<Object>(Some(ObjectBuilder::new().schema_type(Type::String).build()))
+            .parameter_in(parameter_in.clone())
+            .build()];
 
-        let user_dto: UserInfoDTO = user.into();
-        return Ok(HttpResponse::Ok().json(user_dto));
-    }
+        params.push(
+            ParameterBuilder::new()
+                .name("email")
+                .description(Some("User's email"))
+                .schema::<Object>(Some(
+                    ObjectBuilder::new()
+                        .schema_type(Type::String)
+                        .format(Some(SchemaFormat::KnownFormat(KnownFormat::Email)))
+                        .build(),
+                ))
+                .parameter_in(parameter_in.clone())
+                .build(),
+        );
 
-    if let Some(username) = &data.username {
-        let user = match get_user_by_username(db, username).await {
-            Ok(user) => user,
-            Err(e) => {
-                error!("Failed to get user by username: {:?}", e);
+        params.push(
+            ParameterBuilder::new()
+                .name("token")
+                .description(Some("User's token"))
+                .schema::<Object>(Some(ObjectBuilder::new().schema_type(Type::String).build()))
+                .parameter_in(parameter_in)
+                .build(),
+        );
 
-                return Err(ServerResponseError::NotFound);
-            }
-        };
-
-        let user_dto: UserInfoDTO = user.into();
-        return Ok(HttpResponse::Ok().json(user_dto));
-    }
-
-    if let Some(token) = &data.token {
-        let user = match get_user_by_token(db, token).await {
-            Ok(user) => user,
-            Err(e) => {
-                error!("Failed to get user by token: {:?}", e);
-
-                return Err(ServerResponseError::NotFound);
-            }
-        };
-
-        let user_dto: UserInfoDTO = user.into();
-        Ok(HttpResponse::Ok().json(user_dto))
-    } else {
-        Err(ServerResponseError::BadRequest(
-            "No data provided".to_string(),
-        ))
+        params
     }
 }
 
@@ -146,6 +137,7 @@ generate_endpoint! {
         tag: "user",
         responses: {
             (status = 200, response = UserInfoExampleResponses),
+            (status = 401, description = "Invalid credentials"),
             (status = 404, description = "User not found"),
         },
         security: [
@@ -162,6 +154,8 @@ generate_endpoint! {
         info!("Retrieving user");
         let data = data.into_inner();
         let db = &state.db;
-        get_user_by_internal(db, &data).await
+        let user = get_user_by_internal(db, &data).await?;
+
+        Ok(web::Json(user))
     }
 }
