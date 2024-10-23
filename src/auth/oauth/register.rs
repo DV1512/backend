@@ -1,6 +1,7 @@
 use crate::auth::users::create::register_user;
 use crate::auth::{Role, UserInfo};
 use crate::models::datetime::Datetime;
+use crate::error::ServerResponseError;
 use crate::state::AppState;
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
@@ -35,6 +36,12 @@ pub async fn register_endpoint(
     state: web::Data<AppState>,
     data: web::Json<UserRegistrationRequest>,
 ) -> Result<impl ::actix_web::Responder, crate::error::ServerResponseError> {
-    let recres = register_user(&state.db, data.0);
-    Ok(HttpResponse::Created().finish())
+    match register_user(&state.db, data.0).await {
+        Ok(record) => {
+            Ok(HttpResponse::Created().json(record))
+        },
+        Err(err) => {
+            Err(ServerResponseError::InternalError(err.to_string()))
+        }
+    }
 }
