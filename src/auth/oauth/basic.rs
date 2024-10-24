@@ -1,18 +1,10 @@
+use crate::auth::oauth::scopes::Scopes;
 use anyhow::Result;
 use oauth2::{
     AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, RedirectUrl, Scope, TokenUrl,
 };
 use std::marker::PhantomData;
 use tracing::debug;
-
-pub trait Scopes<T> {
-    fn add_scope(self, scope: T) -> Self;
-
-    #[allow(dead_code)]
-    fn remove_scope(self, scope: T) -> Self;
-
-    fn scopes(&self) -> Vec<&str>;
-}
 
 #[derive(Debug, Clone)]
 pub struct BasicOauth<T, U>

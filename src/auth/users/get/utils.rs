@@ -1,4 +1,4 @@
-use crate::auth::{session::UserSessionWithInfo, UserInfo, Users};
+use crate::auth::{UserInfo, Users};
 use crate::{CountResponse, PaginationResponse};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
@@ -6,7 +6,7 @@ use std::sync::Arc;
 use surrealdb::Surreal;
 use tokio::try_join;
 use tosic_utils::{Filter, QueryBuilder, Select, Statement};
-use tracing::error;
+use tracing::{error, warn};
 
 #[tracing::instrument(skip(db))]
 pub(crate) async fn get_user_by_token<T>(db: &Arc<Surreal<T>>, token: &str) -> Result<UserInfo>
@@ -19,11 +19,12 @@ where
         .add_condition("access_token", None, token)
         .set_limit(1);
 
-    let user: Option<UserSessionWithInfo> = query.run(db, 0).await?;
+    let user: Option<UserInfo> = query.run(db, "user").await?;
 
     if let Some(user) = user {
-        Ok(user.user.expect("User not found"))
+        Ok(user)
     } else {
+        warn!("User was not found");
         Err(anyhow::anyhow!("User not found"))
     }
 }
