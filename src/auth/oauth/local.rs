@@ -158,7 +158,7 @@ generate_endpoint! {
         match data.0 {
             TokenRequest::RefreshToken { refresh_token: _ } => Err(ServerResponseError::NotImplementedWithMessage("Refreshing tokens not yet supported".to_string())),
             TokenRequest::Password { username, password } => {
-                let db_query = format!("SELECT *, count() as count FROM user WHERE email = \"{}\" AND array::any(<-auth_for<-user_auth, |$a| !type::is::none($a.password) AND type::is::string($a.password) AND crypto::argon2::compare($a.password,\"{}\")) FETCH auth;", username, password);
+                let db_query = format!("SELECT *, count() as count FROM user WHERE email = \"{}\" AND array::any(<-auth_for<-user_auth, |$a| !type::is::none($a.password) AND type::is::string($a.password) AND crypto::argon2::compare($a.password, \"{}\")) FETCH auth;", username, password);
                 info!("DB query: {}", db_query);
 
                 let mut res = db
