@@ -62,7 +62,7 @@ where
         LET $USER_AUTH = (
             CREATE user_auth SET 
             providers = $providers,
-            password = $password
+            password = crypto::argon2::generate($password)
         );
 
         RELATE ($USER_AUTH.id) -> auth_for -> ($USER.id);
