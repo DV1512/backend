@@ -4,24 +4,15 @@ use crate::error::ServerResponseError;
 use crate::models::datetime::Datetime;
 use crate::state::AppState;
 use actix_web::{web, HttpResponse};
+use helper_macros::generate_endpoint;
 use serde::{Deserialize, Serialize};
-use surrealdb::sql::Thing;
+use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct UserRegistrationRequest {
     pub username: String,
     pub email: String,
     pub password: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct UserRegistration {
-    #[serde(rename = "id")]
-    pub id_auth_for: Thing,
-    #[serde(rename = "in")]
-    pub id_user_auth: Thing,
-    #[serde(rename = "out")]
-    pub id_user: Thing,
 }
 
 impl From<UserRegistrationRequest> for UserInfo {
@@ -41,14 +32,25 @@ impl From<UserRegistrationRequest> for UserInfo {
     }
 }
 
-#[utoipa::path(post, path = "/register")]
-#[actix_web::post("/register")]
-pub async fn register_endpoint(
-    state: web::Data<AppState>,
-    data: web::Json<UserRegistrationRequest>,
-) -> Result<impl ::actix_web::Responder, crate::error::ServerResponseError> {
-    match register_user(&state.db, data.0).await {
-        Ok(record) => Ok(HttpResponse::Created().json(record)),
-        Err(err) => Err(ServerResponseError::InternalError(err.to_string())),
+generate_endpoint! {
+    fn register_endpoint;
+    method: post;
+    path: "/register";
+    docs: {
+        tag: "oauth",
+        responses: {
+            (status = 201, description = "User created successfully"),
+            (status = 409, description = "User already exists"),
+        }
+    }
+    params: {
+        state: web::Data<AppState>,
+        data: web::Json<UserRegistrationRequest>,
+    };
+    {
+        if let Err(err) = register_user(&state.db, data.0).await {
+            return Err(ServerResponseError::InternalError(err.to_string()));
+        }
+        Ok(HttpResponse::Created().finish())
     }
 }

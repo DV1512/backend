@@ -16,6 +16,7 @@ use actix_web::guard::Acceptable;
 use actix_web::{web, Scope};
 use anyhow::Result;
 use logout::logout as logout_endpoint;
+use register::UserRegistrationRequest;
 use serde::Deserialize;
 use utoipa::{IntoParams, OpenApi};
 
@@ -56,13 +57,17 @@ struct OAuthCallbackQuery {
 use github::__path_login as __path_github_login;
 use google::*;
 
+use crate::auth::oauth::register::__path_register_endpoint;
 use crate::models::refresh_token::RefreshToken;
-use local::{TokenRequest,  TokenResponseExample,  __path_token};
+use local::{TokenRequest, TokenResponseExample, __path_token};
 use logout::__path_logout;
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(google_login, github_login, token, logout),
-    components(schemas(TokenRequest, RefreshToken), responses(TokenResponseExample))
+    paths(google_login, github_login, token, logout, register_endpoint),
+    components(
+        schemas(TokenRequest, RefreshToken, UserRegistrationRequest),
+        responses(TokenResponseExample)
+    )
 )]
 pub struct OauthApi;

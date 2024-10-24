@@ -1,4 +1,4 @@
-use crate::auth::oauth::register::{UserRegistration, UserRegistrationRequest};
+use crate::auth::oauth::register::UserRegistrationRequest;
 use crate::auth::UserInfo;
 use crate::Record;
 use anyhow::{bail, Result};
@@ -38,7 +38,7 @@ where
 pub async fn register_user<T>(
     db: &Arc<Surreal<T>>,
     user_registration: UserRegistrationRequest,
-) -> Result<Record>
+) -> Result<()>
 where
     T: surrealdb::Connection,
 {
@@ -62,7 +62,7 @@ where
         LET $USER_AUTH = (
             CREATE user_auth SET 
             providers = $providers,
-            password = crypto::argon2::generate('$password')
+            password = $password
         );
 
         RELATE ($USER_AUTH.id) -> auth_for -> ($USER.id);
@@ -83,11 +83,8 @@ where
         .bind(("providers", provider))
         .bind(("password", password));
 
-    let Some(user_reg): Option<UserRegistration> = full_query.await?.take(2)? else {
-        bail!("Failed to register user.");
-    };
-    let rec = Record {
-        id: user_reg.id_user,
-    };
-    Ok(rec)
+    if let Err(err) = full_query.await?.check() {
+        bail!("Could not register user: '{err}'");
+    }
+    Ok(())
 }
