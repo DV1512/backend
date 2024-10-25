@@ -48,14 +48,7 @@ where
         BEGIN TRANSACTION;
 
         LET $USER = (
-            CREATE user SET
-            username = $username,
-            url_safe_username = $url_safe_username,
-            first_name = $first_name,
-            last_name = $last_name,
-            email = $email,
-            picture = $picture,
-            role = $role
+            CREATE user CONTENT $user_content
         );
 
         LET $USER_AUTH = (
@@ -71,17 +64,12 @@ where
 
     let full_query = db
         .query(REGISTER_USER_SQL)
-        .bind(("username", user.username))
-        .bind(("url_safe_username", user.url_safe_username))
-        .bind(("first_name", user.first_name))
-        .bind(("last_name", user.last_name))
-        .bind(("email", user.email))
-        .bind(("picture", user.picture))
-        .bind(("role", user.role))
+        .bind(("user_content", user))
         .bind(("password", password));
 
     if let Err(err) = full_query.await?.check() {
         bail!("Could not register user: '{err}'");
     }
+
     Ok(())
 }
