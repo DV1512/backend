@@ -1,14 +1,13 @@
 use crate::auth::users::create::register_user;
 use crate::auth::{Role, UserInfo};
-use crate::error::ServerResponseError;
 use crate::models::datetime::Datetime;
 use crate::state::AppState;
 use actix_web::{web, HttpResponse};
 use helper_macros::generate_endpoint;
 use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
+use utoipa::{IntoParams, ToSchema};
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, IntoParams)]
 pub struct UserRegistrationRequest {
     pub username: String,
     pub email: String,
@@ -40,7 +39,7 @@ generate_endpoint! {
         tag: "oauth",
         responses: {
             (status = 201, description = "User created successfully"),
-            (status = 409, description = "User already exists"),
+            (status = 500, description = "An error occurred when creating the user"),
         }
     }
     params: {
@@ -48,9 +47,7 @@ generate_endpoint! {
         data: web::Json<UserRegistrationRequest>,
     };
     {
-        if let Err(err) = register_user(&state.db, data.0).await {
-            return Err(ServerResponseError::InternalError(err.to_string()));
-        }
+        register_user(&state.db, data.0).await?;
         Ok(HttpResponse::Created().finish())
     }
 }

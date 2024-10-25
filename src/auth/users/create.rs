@@ -1,6 +1,6 @@
-use crate::auth::oauth::register::UserRegistrationRequest;
 use crate::auth::UserInfo;
 use crate::Record;
+use crate::{auth::oauth::register::UserRegistrationRequest, error::ServerResponseError};
 use anyhow::{bail, Result};
 use std::sync::Arc;
 use surrealdb::Surreal;
@@ -34,10 +34,11 @@ where
     Ok(record)
 }
 
+#[tracing::instrument(skip(db, user_registration))]
 pub async fn register_user<T>(
     db: &Arc<Surreal<T>>,
     user_registration: UserRegistrationRequest,
-) -> Result<()>
+) -> Result<(), ServerResponseError>
 where
     T: surrealdb::Connection,
 {
@@ -68,8 +69,7 @@ where
         .bind(("password", password));
 
     if let Err(err) = full_query.await?.check() {
-        bail!("Could not register user: '{err}'");
+        return Err(ServerResponseError::DatabaseError(err));
     }
-
     Ok(())
 }
