@@ -58,15 +58,22 @@ use github::__path_login as __path_github_login;
 use google::*;
 
 use crate::auth::oauth::register::__path_register_endpoint;
-use crate::models::refresh_token::RefreshToken;
-use local::{TokenRequest, TokenResponseExample, __path_token};
+use crate::models::{access_token::AccessToken, refresh_token::RefreshToken};
+use local::{TokenRequest, TokenResponse, TokenResponseExample, TokenType, __path_token};
 use logout::__path_logout;
 
 #[derive(OpenApi)]
 #[openapi(
     paths(google_login, github_login, token, logout, register_endpoint),
     components(
-        schemas(TokenRequest, RefreshToken, UserRegistrationRequest),
+        schemas(
+            AccessToken,
+            RefreshToken,
+            TokenRequest,
+            TokenResponse,
+            TokenType,
+            UserRegistrationRequest
+        ),
         responses(TokenResponseExample)
     )
 )]
