@@ -158,17 +158,20 @@ generate_endpoint! {
         match data.0 {
             TokenRequest::RefreshToken { refresh_token: _ } => Err(ServerResponseError::NotImplementedWithMessage("Refreshing tokens not yet supported".to_string())),
             TokenRequest::Password { username, password } => {
-                let db_query = format!("SELECT *, count() as count FROM user WHERE email = \"{}\" AND array::any(<-auth_for<-user_auth, |$a| !type::is::none($a.password) AND type::is::string($a.password) AND crypto::argon2::compare($a.password, \"{}\")) FETCH auth;", username, password);
-                info!("DB query: {}", db_query);
+                let password: surrealdb::sql::Value = password.into();
+
+                // For some forsaken reason we cant bind the password, surrealdb thinks it's the value None instead of a string?!
+                // So we need to convert it to a surrealdb `Value` and then convert into a string using the `Display` trait, it should be as safe as binding the variable, but it's kinda ugly
+                let query = format!("SELECT *, count() as count FROM user WHERE email = $email AND array::any(<-auth_for<-user_auth, |$a| !type::is::none($a.password) AND type::is::string($a.password) AND crypto::argon2::compare($a.password, {})) FETCH auth;", password);
 
                 let mut res = db
-                    .query(db_query)
+                    .query(query)
+                    .bind(("email", username))
                     .await?;
 
                 let query_result: Option<AuthenticatedUser> = res
                     .take(0)?;
 
-                info!("Query result: {:?}", &query_result);
                 let valid_user = query_result.clone().is_some_and(|user| user.count > 0);
 
                 if valid_user {

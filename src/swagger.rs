@@ -90,7 +90,6 @@ impl Modify for OpenApiSecurityConfig {
     tags(
         (name = "user", description = "User management"),
         (name = "oauth", description = "OAuth provider management"),
-        (name = "auth", description = "Authentication management"),
     ),
     modifiers(&AddV1Prefix)
 )]

@@ -32,7 +32,7 @@ once_cell = "1.20.2"
 name = "backend"
 version = "0.1.0"
 edition = "2021"
-description = "Backend for the TOSIC project"
+description = "Backend for the ThreatMapper project"
 
 [dependencies]
 actix = { workspace = true }
