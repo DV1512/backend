@@ -3,7 +3,6 @@ use crate::auth::UserInfo;
 use crate::Record;
 use anyhow::{bail, Result};
 use std::sync::Arc;
-use surrealdb::sql::thing;
 use surrealdb::Surreal;
 
 #[tracing::instrument(skip(db, user))]
@@ -61,7 +60,7 @@ where
 
         LET $USER_AUTH = (
             CREATE user_auth SET 
-            providers = $providers,
+            providers = [ provider:Email ],
             password = crypto::argon2::generate($password)
         );
 
@@ -70,7 +69,6 @@ where
         COMMIT TRANSACTION;
     ";
 
-    let provider = vec![thing("provider:Email").unwrap()];
     let full_query = db
         .query(REGISTER_USER_SQL)
         .bind(("username", user.username))
@@ -80,7 +78,6 @@ where
         .bind(("email", user.email))
         .bind(("picture", user.picture))
         .bind(("role", user.role))
-        .bind(("providers", provider))
         .bind(("password", password));
 
     if let Err(err) = full_query.await?.check() {
