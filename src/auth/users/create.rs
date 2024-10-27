@@ -63,13 +63,10 @@ where
         COMMIT TRANSACTION;
     ";
 
-    let full_query = db
-        .query(REGISTER_USER_SQL)
+    db.query(REGISTER_USER_SQL)
         .bind(("user_content", user))
-        .bind(("password", password));
-
-    if let Err(err) = full_query.await?.check() {
-        return Err(ServerResponseError::DatabaseError(err));
-    }
+        .bind(("password", password))
+        .await?
+        .check()?;
     Ok(())
 }
