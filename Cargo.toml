@@ -12,7 +12,7 @@ serde_json = "1.0"
 surrealdb = { version = "2.0.4" }
 tokio = { version = "1.40", features = ["full", "macros", "rt-multi-thread", "tracing"] }
 dotenv = "0.15"
-anyhow = "1.0.86"
+anyhow = "1.0.91"
 thiserror = "1.0.65"
 tokio-cron-scheduler = "0.13.0"
 tosic-utils = { git = "https://github.com/retrokiller543/tosic-utils.git", features = ["env", "tracing", "surrealdb"] }
