@@ -131,7 +131,6 @@ impl TokenResponse {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct AuthenticatedUser {
-    count: usize,
     email: String,
     id: Thing,
     username: String,
@@ -150,7 +149,18 @@ where
     T: surrealdb::Connection,
 {
     let password: surrealdb::sql::Value = password.into();
-    let query = format!("SELECT *, count() as count FROM user WHERE email = $email AND array::any(<-auth_for<-user_auth, |$a| !type::is::none($a.password) AND type::is::string($a.password) AND crypto::argon2::compare($a.password, {})) FETCH auth;", password);
+    let query = format!(
+        "SELECT * FROM user
+        WHERE email = $email
+        AND array::any(
+            <-auth_for<-user_auth, |$a|
+            !type::is::none($a.password) AND
+            type::is::string($a.password) AND
+            crypto::argon2::compare($a.password, {})
+        )
+        FETCH auth;",
+        password
+    );
     info!("DB query: {query}");
 
     let query_result: Option<AuthenticatedUser> =
