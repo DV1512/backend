@@ -154,7 +154,6 @@ where
         WHERE email = $email
         AND array::any(
             <-auth_for<-user_auth, |$a|
-            !type::is::none($a.password) AND
             type::is::string($a.password) AND
             crypto::argon2::compare($a.password, {})
         )
