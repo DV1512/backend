@@ -1,9 +1,9 @@
+use crate::middlewares::auth::AuthType;
 use crate::utils::middleware::define_middleware;
 use actix_web::http::{Method, StatusCode};
 use actix_web::{dev::ServiceRequest, HttpMessage};
 use tokio::sync::mpsc::Sender;
 use tracing::error;
-use crate::middlewares::auth::AuthType;
 
 #[derive(Debug, Clone)]
 #[allow(dead_code)]

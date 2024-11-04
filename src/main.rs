@@ -6,6 +6,7 @@ use crate::auth::users::user_service;
 use crate::config::{cors, rate_limiter, rate_limiter_data};
 use crate::init_env::init_env;
 use crate::logging::init_tracing;
+use crate::middlewares::auth::AuthType;
 use crate::middlewares::logger::{LogEntry, LoggingMiddleware};
 use crate::server_error::ServerError;
 use crate::state::{app_state, AppState};
@@ -39,7 +40,6 @@ use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_scalar::{Scalar, Servable as OtherServable};
 use utoipa_swagger_ui::{Config, SwaggerUi};
-use crate::middlewares::auth::AuthType;
 
 mod auth;
 mod config;
@@ -264,7 +264,10 @@ async fn main() -> Result<(), ServerError> {
                     info!("{}, Access was granted using API key: {} to ", log, key);
                 }
                 Some(AuthType::AccessToken(token)) => {
-                    info!("{}, Access was granted using access token: {} to ", log, token);
+                    info!(
+                        "{}, Access was granted using access token: {} to ",
+                        log, token
+                    );
                 }
                 None => {
                     info!("{}, No Auth present for this request", log);
