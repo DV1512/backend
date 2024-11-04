@@ -240,7 +240,7 @@ async fn main() -> Result<(), ServerError> {
     }
 
     let port = tosic_utils::prelude::env!("PORT", "9999");
-    let frontend_url = tosic_utils::prelude::env!("FRONTEND_URL", "http://localhost:42069");
+    let frontend_url = tosic_utils::prelude::env!("FRONTEND_URL", "http://localhost:5173");
     let base_url = tosic_utils::prelude::env!("BASE_URL", "http://localhost:9999");
 
     let (rate_limit_backend, max_requests, limit_duration) =
