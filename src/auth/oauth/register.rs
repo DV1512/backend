@@ -1,6 +1,5 @@
 use crate::auth::users::create::register_user;
-use crate::auth::{Role, UserInfo};
-use crate::models::datetime::Datetime;
+use crate::auth::UserInfo;
 use crate::state::AppState;
 use actix_web::{web, HttpResponse};
 use helper_macros::generate_endpoint;
@@ -21,12 +20,7 @@ impl From<UserRegistrationRequest> for UserInfo {
             email: value.email,
             url_safe_username: value.username.clone(),
             username: value.username,
-            first_name: String::new(),
-            last_name: String::new(),
-            created_at: Datetime::default(),
-            last_login: None,
-            picture: Some(String::new()),
-            role: Role::default(),
+            ..Default::default()
         }
     }
 }

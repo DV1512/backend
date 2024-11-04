@@ -55,10 +55,10 @@ where
         LET $USER_AUTH = (
             CREATE user_auth SET 
             providers = [ provider:Email ],
-            password = crypto::argon2::generate($password)
+            password = $password
         );
 
-        RELATE ($USER_AUTH.id) -> auth_for -> ($USER.id);
+        RELATE ($USER_AUTH) -> auth_for -> ($USER);
 
         COMMIT TRANSACTION;
     ";
