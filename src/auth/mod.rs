@@ -20,7 +20,7 @@ pub enum Role {
     User,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema, PartialOrd, Eq, PartialEq)]
+#[derive(Default, Debug, Serialize, Deserialize, Clone, ToSchema, PartialOrd, Eq, PartialEq)]
 pub struct UserInfo {
     #[schema(example = "user:123456")]
     pub id: Option<Thing>,

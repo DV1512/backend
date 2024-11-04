@@ -11,7 +11,9 @@ use rand::{
     thread_rng,
 };
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use surrealdb::sql::Thing;
+use surrealdb::Surreal;
 use tracing::info;
 use utoipa::openapi::path::{Parameter, ParameterBuilder, ParameterIn};
 use utoipa::openapi::schema::Type;
@@ -129,10 +131,44 @@ impl TokenResponse {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct AuthenticatedUser {
-    count: usize,
     email: String,
     id: Thing,
     username: String,
+}
+
+/// Validates a given username and password,
+/// returning ``Ok(AuthenticatedUser)`` for valid credentials
+/// and ``Err(ServerResponse::UnauthorizedWithMessage)``
+/// otherwise.
+async fn validate_user<T>(
+    username: String,
+    password: String,
+    db: &Arc<Surreal<T>>,
+) -> Result<AuthenticatedUser, ServerResponseError>
+where
+    T: surrealdb::Connection,
+{
+    let password: surrealdb::sql::Value = password.into();
+    let query = format!(
+        "SELECT * FROM user
+        WHERE email = $email
+        AND array::any(
+            <-auth_for<-user_auth, |$a|
+            type::is::string($a.password) AND
+            crypto::argon2::compare($a.password, {})
+        )
+        FETCH auth;",
+        password
+    );
+    info!("DB query: {query}");
+
+    let query_result: Option<AuthenticatedUser> =
+        db.query(query).bind(("email", username)).await?.take(0)?;
+    info!("Query result: {:?}", &query_result);
+
+    query_result.ok_or(ServerResponseError::UnauthorizedWithMessage(
+        "Invalid username or password".to_string(),
+    ))
 }
 
 generate_endpoint! {
@@ -158,41 +194,20 @@ generate_endpoint! {
         match data.0 {
             TokenRequest::RefreshToken { refresh_token: _ } => Err(ServerResponseError::NotImplementedWithMessage("Refreshing tokens not yet supported".to_string())),
             TokenRequest::Password { username, password } => {
-                let password: surrealdb::sql::Value = password.into();
+                let user = validate_user(username, password, &db).await?;
+                let response = TokenResponse::new();
+                let token = response.access_token.secret().to_string();
 
-                // For some forsaken reason we cant bind the password, surrealdb thinks it's the value None instead of a string?!
-                // So we need to convert it to a surrealdb `Value` and then convert into a string using the `Display` trait, it should be as safe as binding the variable, but it's kinda ugly
-                let query = format!("SELECT *, count() as count FROM user WHERE email = $email AND array::any(<-auth_for<-user_auth, |$a| !type::is::none($a.password) AND type::is::string($a.password) AND crypto::argon2::compare($a.password, {})) FETCH auth;", password);
+                let session = UserSession::new(token.clone(), Some(response.refresh_token.secret().to_string()), user.email, user.id);
+                Identity::login(&req.extensions(), token).unwrap();
+                session.create().await?;
 
-                let mut res = db
-                    .query(query)
-                    .bind(("email", username))
-                    .await?;
-
-                let query_result: Option<AuthenticatedUser> = res
-                    .take(0)?;
-
-                let valid_user = query_result.clone().is_some_and(|user| user.count > 0);
-
-                if valid_user {
-                    let user = query_result.clone().unwrap();
-                    let user_id = user.id.clone();
-                    let response = TokenResponse::new();
-                    let token = response.access_token.secret().to_string();
-
-                    let session = UserSession::new(token.clone(), Some(response.refresh_token.secret().to_string()), user.email, user_id);
-                    Identity::login(&req.extensions(), token).unwrap();
-                    session.create().await?;
-
-                    Ok(HttpResponse::Ok()
-                        .insert_header(header::CacheControl(vec![
-                            CacheDirective::NoCache,
-                            CacheDirective::NoStore,
-                        ]))
-                        .json(response))
-                } else {
-                    Err(ServerResponseError::UnauthorizedWithMessage("Invalid username or password".to_string()))
-                }
+                Ok(HttpResponse::Ok()
+                    .insert_header(header::CacheControl(vec![
+                        CacheDirective::NoCache,
+                        CacheDirective::NoStore,
+                    ]))
+                    .json(response))
             }
         }
     }
