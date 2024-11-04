@@ -139,7 +139,7 @@ generate_endpoint! {
             .await
         {
             Ok(session) => {
-                let redirect_url = format!("{}users?token={}", frontend_url, session.access_token);
+                let redirect_url = format!("{}redirect?token={}", frontend_url, session.access_token);
 
                 Ok(HttpResponse::Found()
                     .append_header(("Location", redirect_url))

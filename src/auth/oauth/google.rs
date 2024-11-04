@@ -122,7 +122,7 @@ generate_endpoint! {
             .await
         {
             Ok(session) => {
-                let redirect_url = format!("{}users?token={}", frontend_url, session.access_token);
+                let redirect_url = format!("{}redirect?token={}", frontend_url, session.access_token);
                 Identity::login(&req.extensions(), session.access_token.clone()).unwrap();
 
                 Ok(HttpResponse::Found()
