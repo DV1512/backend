@@ -4,16 +4,40 @@ use actix_web::{dev::Payload, error::ErrorUnauthorized, Either, FromRequest, Htt
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use std::future::Future;
 use std::pin::Pin;
-use tosic_utils::wrap_external_type;
 use tracing::warn;
 
-pub(crate) type Auth = Either<Identity, Bearer>;
+pub(crate) type Auth = Either<Identity, UserSession>;
 
-wrap_external_type! {
-    pub(crate) struct Bearer(BearerAuth);
+pub(crate) trait IntoSession {
+    fn get_token(&self) -> String;
+
+    #[inline]
+    async fn get_session(&self) -> Option<UserSession> {
+        let token = self.get_token();
+
+        if token.is_empty() {
+            return None;
+        }
+
+        UserSession::fetch_by_access_token(token).await
+    }
 }
 
-impl FromRequest for Bearer {
+impl IntoSession for Identity {
+    #[inline(always)]
+    fn get_token(&self) -> String {
+        self.id().unwrap_or("".to_string())
+    }
+}
+
+impl IntoSession for BearerAuth {
+    #[inline(always)]
+    fn get_token(&self) -> String {
+        self.token().to_string()
+    }
+}
+
+impl FromRequest for UserSession {
     type Error = actix_web::Error;
     type Future = Pin<Box<dyn Future<Output = Result<Self, Self::Error>>>>;
 
@@ -22,15 +46,14 @@ impl FromRequest for Bearer {
 
         match token_result {
             Ok(token) => Box::pin(async move {
-                if UserSession::fetch_by_access_token(token.token().to_string())
-                    .await
-                    .is_none()
-                {
+                let session = token.get_session().await;
+
+                if session.is_none() {
                     warn!("Unauthorized access token: {}", token.token());
                     return Err(ErrorUnauthorized("Unauthorized"));
                 }
 
-                Ok(Bearer(token))
+                Ok(session.unwrap())
             }),
             Err(_err) => Box::pin(async { Err(ErrorUnauthorized("Unauthorized")) }),
         }

@@ -1,10 +1,11 @@
-use crate::auth::users::get::utils::get_user_by_token;
-use crate::auth::UserInfo;
 use crate::utils::middleware::define_middleware;
-use crate::AppState;
-use actix_web::web::Data;
 use actix_web::{dev::ServiceRequest, HttpMessage};
-use tracing::error;
+
+#[derive(Debug, Clone)]
+pub enum AuthType {
+    ApiKey(String),
+    AccessToken(String),
+}
 
 define_middleware! {
     /// Middleware for authenticating requests
@@ -20,11 +21,6 @@ define_middleware! {
     |this: &AuthMiddlewareService<S>, req: ServiceRequest| {
         let service = this.service.clone();
         let fut = async move {
-            // Access AppState
-            let app_state = req
-                .app_data::<Data<AppState>>()
-                .ok_or_else(|| actix_web::error::ErrorInternalServerError("AppState not found"))?;
-
             // Access headers
             let headers = req.headers();
 
@@ -33,42 +29,21 @@ define_middleware! {
             let api_key_header = headers.get("X-Api-Key");
 
             // Placeholder for authentication result
-            let mut authenticated_user: Option<UserInfo> = None;
+            let mut session: Option<AuthType> = None;
 
             if let Some(auth_header) = auth_header {
                 if let Ok(auth_str) = auth_header.to_str() {
                     if let Some(token) = auth_str.strip_prefix("Bearer ") {
-                        let user = match get_user_by_token(&app_state.db, token).await {
-                            Ok(user) => user,
-                            Err(e) => {
-                                error!("Failed to get user by token: {:?}", e);
-                                return Err(actix_web::error::ErrorUnauthorized("Unauthorized"));
-                            }
-                        };
-
-                        authenticated_user = Some(user);
+                        session = Some(AuthType::AccessToken(token.into()));
                     }
                 }
             } else if let Some(api_key_header) = api_key_header {
-                if let Ok(_api_key) = api_key_header.to_str() {
-                    let user = UserInfo {
-                        id: None,
-                        email: "".to_string(),
-                        url_safe_username: "test".to_string(),
-                        username: "".to_string(),
-                        first_name: "".to_string(),
-                        last_name: "".to_string(),
-                        created_at: Default::default(),
-                        last_login: None,
-                        picture: None,
-                        role: Default::default(),
-                    };
-
-                    authenticated_user = Some(user);
+                if let Ok(api_key) = api_key_header.to_str() {
+                    session = Some(AuthType::ApiKey(api_key.into()));
                 }
             }
 
-            if let Some(user) = authenticated_user {
+            if let Some(user) = session {
                 // Attach user info to request extensions
                 req.extensions_mut().insert(user);
 

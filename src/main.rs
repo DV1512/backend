@@ -39,6 +39,7 @@ use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_scalar::{Scalar, Servable as OtherServable};
 use utoipa_swagger_ui::{Config, SwaggerUi};
+use crate::middlewares::auth::AuthType;
 
 mod auth;
 mod config;
@@ -251,9 +252,24 @@ async fn main() -> Result<(), ServerError> {
 
     tokio::spawn(async move {
         while let Some(log) = log_receiver.recv().await {
-            // TODO: database logging
-            // this is to not make a network call to the database for every request immediately and instead make it happen in the background
-            info!("{:?}", log)
+            let method = log.method;
+            let path = log.path;
+            let status = log.status;
+            let auth_method = log.user;
+
+            let log = format!("Method: {}, Path: {}, Status: {}", method, path, status);
+
+            match auth_method {
+                Some(AuthType::ApiKey(key)) => {
+                    info!("{}, Access was granted using API key: {} to ", log, key);
+                }
+                Some(AuthType::AccessToken(token)) => {
+                    info!("{}, Access was granted using access token: {} to ", log, token);
+                }
+                None => {
+                    info!("{}, No Auth present for this request", log);
+                }
+            }
         }
     });
 

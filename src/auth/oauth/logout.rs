@@ -1,14 +1,11 @@
 use crate::auth::session::UserSession;
 use crate::error::ServerResponseError;
-use crate::extractors::Auth;
+use crate::extractors::{Auth, IntoSession};
 use crate::generate_endpoint;
 use actix_web::{Either, HttpResponse};
 use tracing::info;
 
-pub async fn delete_session(token: String) -> Result<(), ServerResponseError> {
-    let session = UserSession::fetch_by_access_token(token)
-        .await
-        .ok_or(ServerResponseError::NotFound)?;
+pub async fn delete_session(session: UserSession) -> Result<(), ServerResponseError> {
     session.delete().await?;
 
     info!("Session deleted successfully");
@@ -37,18 +34,23 @@ generate_endpoint! {
         token: Auth
     };
     {
-        let token = match token {
+        let session = match token {
             Either::Left(identity) => {
-                let access_token = identity.id()?;
+                let session = identity.get_session().await;
+
+                if session.is_none() {
+                    return Err(ServerResponseError::Unauthorized);
+                }
+
                 identity.logout();
-                access_token
+                session.unwrap()
             },
-            Either::Right(bearer) => {
-                bearer.token().to_string()
+            Either::Right(session) => {
+                session
             },
         };
 
-        delete_session(token).await?;
+        delete_session(session).await?;
 
         Ok(HttpResponse::Ok().finish())
     }
