@@ -6,7 +6,7 @@ use self::get::get_user_by;
 use super::{Role, UserInfo, UserInfoExampleResponses};
 use crate::auth::users::get::{GetUserBy, __path_get_user_by};
 use actix_web::guard::Acceptable;
-use actix_web::{web, Scope};
+use actix_web::web;
 use utoipa::OpenApi;
 
 #[derive(OpenApi)]
@@ -19,7 +19,7 @@ use utoipa::OpenApi;
 )]
 pub(crate) struct UserApi;
 
-pub fn user_service() -> Scope {
+pub fn user_service() -> impl actix_web::dev::HttpServiceFactory {
     web::scope("/user")
         .guard(Acceptable::new(mime::APPLICATION_JSON).match_star_star())
         .service(get_user_by)

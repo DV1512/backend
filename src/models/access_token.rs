@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use tosic_utils::wrap_external_type;
-use utoipa::openapi;
+use utoipa::openapi::{ObjectBuilder, RefOr, Schema, Type};
+use utoipa::PartialSchema;
 
 wrap_external_type! {
     #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -13,14 +14,13 @@ impl AccessToken {
     }
 }
 
-impl<'__s> utoipa::ToSchema<'__s> for AccessToken {
-    fn schema() -> (&'__s str, openapi::RefOr<openapi::schema::Schema>) {
-        (
-            "AccessToken",
-            openapi::schema::ObjectBuilder::new()
-                .schema_type(openapi::schema::Type::String)
-                .description(Some("Access token"))
-                .into(),
-        )
+impl PartialSchema for AccessToken {
+    fn schema() -> RefOr<Schema> {
+        ObjectBuilder::new()
+            .schema_type(Type::String)
+            .description(Some("Access token"))
+            .into()
     }
 }
+
+impl utoipa::ToSchema for AccessToken {}

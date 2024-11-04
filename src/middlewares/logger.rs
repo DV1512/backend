@@ -1,4 +1,4 @@
-use crate::auth::UserInfo;
+use crate::middlewares::auth::AuthType;
 use crate::utils::middleware::define_middleware;
 use actix_web::http::{Method, StatusCode};
 use actix_web::{dev::ServiceRequest, HttpMessage};
@@ -10,7 +10,7 @@ use tracing::error;
 pub struct LogEntry {
     pub method: Method,
     pub path: String,
-    pub user: Option<UserInfo>,
+    pub user: Option<AuthType>,
     pub status: StatusCode,
 }
 
@@ -23,7 +23,7 @@ define_middleware! {
     |this: &LoggingMiddlewareService<S>, req: ServiceRequest| {
         let method = req.method().clone();
         let path = req.path().to_string();
-        let user = req.extensions().get::<UserInfo>().cloned();
+        let user = req.extensions().get::<AuthType>().cloned();
         let log_sender = this.log_sender.clone();
 
         let fut = this.service.call(req);

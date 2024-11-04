@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use surrealdb::Surreal;
 use tosic_utils::{Select, Statement};
-use tracing::info;
+use tracing::{info, warn};
 use utoipa::openapi::path::{Parameter, ParameterBuilder, ParameterIn};
 use utoipa::openapi::{KnownFormat, Object, ObjectBuilder, SchemaFormat, Type};
 use utoipa::{IntoParams, ToSchema};
@@ -32,7 +32,7 @@ where
         info!("User found: {:?}", user);
         Ok(user)
     } else {
-        info!("User not found");
+        warn!("User not found");
         Err(anyhow::anyhow!("User not found"))
     }
 }

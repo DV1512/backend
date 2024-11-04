@@ -6,6 +6,7 @@ use crate::auth::users::user_service;
 use crate::config::{cors, rate_limiter, rate_limiter_data};
 use crate::init_env::init_env;
 use crate::logging::init_tracing;
+use crate::middlewares::auth::AuthType;
 use crate::middlewares::logger::{LogEntry, LoggingMiddleware};
 use crate::server_error::ServerError;
 use crate::state::{app_state, AppState};
@@ -251,9 +252,27 @@ async fn main() -> Result<(), ServerError> {
 
     tokio::spawn(async move {
         while let Some(log) = log_receiver.recv().await {
-            // TODO: database logging
-            // this is to not make a network call to the database for every request immediately and instead make it happen in the background
-            info!("{:?}", log)
+            let method = log.method;
+            let path = log.path;
+            let status = log.status;
+            let auth_method = log.user;
+
+            let log = format!("Method: {}, Path: {}, Status: {}", method, path, status);
+
+            match auth_method {
+                Some(AuthType::ApiKey(key)) => {
+                    info!("{}, Access was granted using API key: {} to ", log, key);
+                }
+                Some(AuthType::AccessToken(token)) => {
+                    info!(
+                        "{}, Access was granted using access token: {} to ",
+                        log, token
+                    );
+                }
+                None => {
+                    info!("{}, No Auth present for this request", log);
+                }
+            }
         }
     });
 
