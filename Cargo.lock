@@ -453,7 +453,7 @@ source = "git+https://github.com/retrokiller543/api-forge.git#4162ae2ea1510ae0ca
 dependencies = [
  "anyhow",
  "api-forge-macro",
- "reqwest 0.12.8",
+ "reqwest 0.12.9",
  "serde",
  "serde-xml-rust",
  "serde_json",
@@ -710,7 +710,7 @@ dependencies = [
  "futures",
  "oauth2",
  "once_cell",
- "reqwest 0.12.8",
+ "reqwest 0.12.9",
  "serde",
  "serde_json",
  "surrealdb",
@@ -3650,9 +3650,9 @@ dependencies = [
 
 [[package]]
 name = "reqwest"
-version = "0.12.8"
+version = "0.12.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f713147fbe92361e52392c73b8c9e48c04c6625bce969ef54dc901e58e042a7b"
+checksum = "a77c62af46e79de0a562e1a9849205ffcb7fc1238876e9bd743357570e04046f"
 dependencies = [
  "base64 0.22.1",
  "bytes",
@@ -4475,7 +4475,7 @@ dependencies = [
  "path-clean",
  "pharos",
  "reblessive",
- "reqwest 0.12.8",
+ "reqwest 0.12.9",
  "revision",
  "ring",
  "rust_decimal",
@@ -4567,7 +4567,7 @@ dependencies = [
  "rand",
  "reblessive",
  "regex",
- "reqwest 0.12.8",
+ "reqwest 0.12.9",
  "revision",
  "ring",
  "rmpv",
