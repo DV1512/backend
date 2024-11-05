@@ -1,8 +1,7 @@
 use crate::auth::session::UserSession;
 use crate::error::ServerResponseError;
-use crate::extractors::{Auth, IntoSession};
 use crate::generate_endpoint;
-use actix_web::{Either, HttpResponse};
+use actix_web::HttpResponse;
 use tracing::info;
 
 pub async fn delete_session(session: UserSession) -> Result<(), ServerResponseError> {
@@ -31,25 +30,9 @@ generate_endpoint! {
         ]
     }
     params: {
-        token: Auth
+        session: UserSession
     };
     {
-        let session = match token {
-            Either::Left(identity) => {
-                let session = identity.get_session().await;
-
-                if session.is_none() {
-                    return Err(ServerResponseError::Unauthorized);
-                }
-
-                identity.logout();
-                session.unwrap()
-            },
-            Either::Right(session) => {
-                session
-            },
-        };
-
         delete_session(session).await?;
 
         Ok(HttpResponse::Ok().finish())

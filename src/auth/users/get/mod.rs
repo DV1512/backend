@@ -3,7 +3,7 @@ pub(crate) mod utils;
 use crate::auth::users::get::utils::get_user_by_token;
 use crate::auth::UserInfo;
 use crate::dto::UserInfoDTO;
-use crate::extractors::Auth;
+use crate::extractors::Authenticated;
 use crate::AppState;
 use actix_web::web;
 use anyhow::Result;
@@ -146,7 +146,7 @@ generate_endpoint! {
         ]
     }
     params: {
-        _auth: Auth,
+        _auth: Authenticated,
         state: web::Data<AppState>,
         data: web::Query<GetUserBy>,
     };
