@@ -1,9 +1,9 @@
+use crate::auth::UserInfo;
+use crate::Record;
+use crate::{auth::oauth::register::UserRegistrationRequest, error::ServerResponseError};
 use anyhow::{bail, Result};
 use std::sync::Arc;
 use surrealdb::Surreal;
-
-use crate::auth::UserInfo;
-use crate::Record;
 
 #[tracing::instrument(skip(db, user))]
 pub async fn create_user<T>(db: &Arc<Surreal<T>>, user: UserInfo) -> Result<Record>
@@ -32,4 +32,41 @@ where
     };
 
     Ok(record)
+}
+
+#[tracing::instrument(skip(db, user_registration))]
+pub async fn register_user<T>(
+    db: &Arc<Surreal<T>>,
+    user_registration: UserRegistrationRequest,
+) -> Result<(), ServerResponseError>
+where
+    T: surrealdb::Connection,
+{
+    let password = user_registration.password.clone();
+    let user = UserInfo::from(user_registration);
+
+    const REGISTER_USER_SQL: &str = "
+        BEGIN TRANSACTION;
+
+        LET $USER = (
+            CREATE user CONTENT $user_content
+        );
+
+        LET $USER_AUTH = (
+            CREATE user_auth SET 
+            providers = [ provider:Email ],
+            password = $password
+        );
+
+        RELATE ($USER_AUTH) -> auth_for -> ($USER);
+
+        COMMIT TRANSACTION;
+    ";
+
+    db.query(REGISTER_USER_SQL)
+        .bind(("user_content", user))
+        .bind(("password", password))
+        .await?
+        .check()?;
+    Ok(())
 }

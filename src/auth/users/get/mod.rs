@@ -2,14 +2,20 @@ pub(crate) mod utils;
 
 use crate::auth::users::get::utils::get_user_by_token;
 use crate::auth::UserInfo;
+use crate::dto::UserInfoDTO;
+use crate::extractors::Authenticated;
 use crate::AppState;
-use actix_web::{get, web, HttpResponse, Responder};
+use actix_web::web;
 use anyhow::Result;
+use helper_macros::generate_endpoint;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use surrealdb::Surreal;
 use tosic_utils::{Select, Statement};
-use tracing::{error, info};
+use tracing::{info, warn};
+use utoipa::openapi::path::{Parameter, ParameterBuilder, ParameterIn};
+use utoipa::openapi::{KnownFormat, Object, ObjectBuilder, SchemaFormat, Type};
+use utoipa::{IntoParams, ToSchema};
 
 #[tracing::instrument(skip(db))]
 pub async fn get_user_by_username<T>(db: &Arc<Surreal<T>>, username: &str) -> Result<UserInfo>
@@ -26,7 +32,7 @@ where
         info!("User found: {:?}", user);
         Ok(user)
     } else {
-        info!("User not found");
+        warn!("User not found");
         Err(anyhow::anyhow!("User not found"))
     }
 }
@@ -57,73 +63,99 @@ where
     get_user_by_email(db, email).await.ok()
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct GetUserBy {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub username: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub email: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub token: Option<String>,
-}
-
 #[tracing::instrument(skip(db, data))]
 pub(crate) async fn get_user_by_internal<T>(
     db: &Arc<Surreal<T>>,
     data: &GetUserBy,
-) -> impl Responder
+) -> Result<UserInfoDTO, ServerResponseError>
 where
     T: surrealdb::Connection,
 {
-    if data.email.is_none() && data.token.is_none() && data.username.is_none() {
-        return HttpResponse::BadRequest().body("Missing email or token");
+    match data {
+        GetUserBy::Email { email } => get_user_by_email(db, email).await,
+        GetUserBy::Username { username } => get_user_by_username(db, username).await,
+        GetUserBy::Token { token } => get_user_by_token(db, token).await,
     }
+    .map_err(|_| ServerResponseError::NotFound)
+    .map(|user| user.into())
+}
 
-    if let Some(email) = &data.email {
-        let user = match get_user_by_email(db, email).await {
-            Ok(user) => user,
-            Err(e) => {
-                error!("Failed to get user by email: {:?}", e);
-                return HttpResponse::NotFound().body("User not found");
-            }
-        };
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
+#[serde(untagged)]
+pub(crate) enum GetUserBy {
+    Username { username: String },
+    Email { email: String },
+    Token { token: String },
+}
 
-        return HttpResponse::Ok().json(user);
-    }
+impl IntoParams for GetUserBy {
+    fn into_params(parameter_in_provider: impl Fn() -> Option<ParameterIn>) -> Vec<Parameter> {
+        let parameter_in = parameter_in_provider().unwrap_or(ParameterIn::Query);
+        let mut params = vec![ParameterBuilder::new()
+            .name("username")
+            .description(Some("User's username"))
+            .schema::<Object>(Some(ObjectBuilder::new().schema_type(Type::String).build()))
+            .parameter_in(parameter_in.clone())
+            .build()];
 
-    if let Some(username) = &data.username {
-        let user = match get_user_by_username(db, username).await {
-            Ok(user) => user,
-            Err(e) => {
-                error!("Failed to get user by username: {:?}", e);
-                return HttpResponse::NotFound().body("User not found");
-            }
-        };
+        params.push(
+            ParameterBuilder::new()
+                .name("email")
+                .description(Some("User's email"))
+                .schema::<Object>(Some(
+                    ObjectBuilder::new()
+                        .schema_type(Type::String)
+                        .format(Some(SchemaFormat::KnownFormat(KnownFormat::Email)))
+                        .build(),
+                ))
+                .parameter_in(parameter_in.clone())
+                .build(),
+        );
 
-        return HttpResponse::Ok().json(user);
-    }
+        params.push(
+            ParameterBuilder::new()
+                .name("token")
+                .description(Some("User's token"))
+                .schema::<Object>(Some(ObjectBuilder::new().schema_type(Type::String).build()))
+                .parameter_in(parameter_in)
+                .build(),
+        );
 
-    if let Some(token) = &data.token {
-        let user = match get_user_by_token(db, token).await {
-            Ok(user) => user,
-            Err(e) => {
-                error!("Failed to get user by token: {:?}", e);
-                return HttpResponse::NotFound().body("User not found");
-            }
-        };
-
-        HttpResponse::Ok().json(user)
-    } else {
-        HttpResponse::BadRequest().body("Missing email or token")
+        params
     }
 }
 
-#[get("/by")]
-pub(crate) async fn get_user_by(
-    data: web::Query<GetUserBy>,
-    state: web::Data<AppState>,
-) -> impl Responder {
-    let data = data.into_inner();
-    let db = &state.db;
-    get_user_by_internal(db, &data).await
+use crate::auth::UserInfoExampleResponses;
+use crate::error::ServerResponseError;
+
+generate_endpoint! {
+    fn get_user_by;
+    method: get;
+    path: "";
+    docs: {
+        params: (GetUserBy),
+        tag: "user",
+        responses: {
+            (status = 200, response = UserInfoExampleResponses),
+            (status = 401, description = "Invalid credentials"),
+            (status = 404, description = "User not found"),
+        },
+        security: [
+            ("bearer_token" = []),
+            ("cookie_session" = []),
+        ]
+    }
+    params: {
+        _auth: Authenticated,
+        state: web::Data<AppState>,
+        data: web::Query<GetUserBy>,
+    };
+    {
+        info!("Retrieving user");
+        let data = data.into_inner();
+        let db = &state.db;
+        let user = get_user_by_internal(db, &data).await?;
+
+        Ok(web::Json(user))
+    }
 }

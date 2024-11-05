@@ -1,0 +1,49 @@
+# This is a only for development purposes
+
+name: threatmapper-backend
+
+services:
+  db:
+    image: surrealdb/surrealdb:latest-dev
+    command: start --log info --user root --pass root
+    ports:
+      - "7352:8000"
+    networks:
+      - db-network
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "--tries=1", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      args:
+        PROFILE: dev
+        BINARY: backend
+    networks:
+      - db-network
+      - api
+    environment:
+      SURREALDB_URL: db:8000
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      PORT: 9999
+      RUST_LOG: info
+    ports:
+      - "9998:9999"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+networks:
+  db-network:
+    driver: bridge
+  api:
+    driver: bridge

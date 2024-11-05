@@ -1,5 +1,5 @@
 [workspace]
-members = ["."]
+members = [".", "helper-macros"]
 
 [workspace.dependencies]
 actix = "0.13.5"
@@ -7,7 +7,7 @@ actix-ws = "0.3.0"
 actix-web = "4.0"
 actix-cors = "0.7.0"
 api-forge = { git = "https://github.com/retrokiller543/api-forge.git", features = ["native"] }
-serde = { version = "1.0", features = ["derive"] }
+serde = { version = "1.0", features = ["derive", "alloc", "rc"] }
 serde_json = "1.0"
 surrealdb = { version = "2.0.4" }
 tokio = { version = "1.40", features = ["full", "macros", "rt-multi-thread", "tracing"] }
@@ -16,12 +16,15 @@ anyhow = "1.0.91"
 thiserror = "1.0.65"
 tokio-cron-scheduler = "0.13.0"
 tosic-utils = { git = "https://github.com/retrokiller543/tosic-utils.git", features = ["env", "tracing", "surrealdb"] }
+surrealdb-abstraction = { git = "https://github.com/retrokiller543/tosic-utils.git" }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 actix-extensible-rate-limit = "0.4.0"
 surrealdb-migrations = { version = "2.0.0" }
 tracing = { version = "0.1.37", features = ["log"] }
 tracing-actix-web = "0.7.14"
 oauth2 = "4.4.2"
+actix-identity = "0.8.0"
+actix-session = { version = "0.10.1", features = ["cookie-session"] }
 reqwest = "0.12.8"
 once_cell = "1.20.2"
 
@@ -29,7 +32,7 @@ once_cell = "1.20.2"
 name = "backend"
 version = "0.1.0"
 edition = "2021"
-description = "Backend for the TOSIC project"
+description = "Backend for the ThreatMapper project"
 
 [dependencies]
 actix = { workspace = true }
@@ -57,6 +60,19 @@ reqwest = { workspace = true }
 chrono = "0.4.38"
 once_cell = { workspace = true }
 futures = "0.3.31"
+utoipa = { version = "5.1.2", features = ["actix_extras", "debug"] }
+utoipa-swagger-ui = { version = "8.0.3", features = ["actix-web"] }
+utoipa-redoc = { version = "5.0.0", features = ["actix-web"] }
+utoipa-rapidoc = { version = "5.0.0", features = ["actix-web"] }
+utoipa-scalar = { version = "0.2.0", features = ["actix-web"] }
+surrealdb-abstraction = { workspace = true }
+helper-macros = { path = "helper-macros" }
+actix-identity = { workspace = true }
+actix-session = { workspace = true }
+rand = { version = "0.8.5", default-features = false }
+mime = "0.3.17"
+serde_urlencoded = "0.7.1"
+actix-web-httpauth = "0.8.2"
 
 [features]
 default = ["local"]
