@@ -13,7 +13,7 @@ use crate::auth::oauth::github::{github_oauth_service, GithubOauth};
 use crate::auth::oauth::google::{google_oauth_service, GoogleOauth};
 use crate::auth::oauth::local::token;
 use crate::auth::oauth::register::register_endpoint;
-use crate::auth::oauth::update::{user_update_endpoint, UserUpdateRequest};
+use crate::auth::oauth::update::{user_update_endpoint, UserInfoUpdateRequest, UserUpdateRequest};
 use actix_web::guard::Acceptable;
 use actix_web::{web, Scope};
 use anyhow::Result;
@@ -84,6 +84,7 @@ use update::__path_user_update_endpoint;
             TokenResponse,
             TokenType,
             UserRegistrationRequest,
+            UserInfoUpdateRequest,
             UserUpdateRequest
         ),
         responses(TokenResponseExample)
