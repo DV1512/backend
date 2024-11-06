@@ -1,4 +1,5 @@
 use crate::__path_health_check;
+use crate::graphql::__path_graphql_endpoint;
 use crate::models::{datetime::Datetime, thing::Thing};
 use std::collections::BTreeMap;
 use utoipa::{Modify, OpenApi};
@@ -97,7 +98,7 @@ pub struct DocsV1;
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(health_check),
+    paths(health_check, graphql_endpoint),
     nest(
         (path = "/", api = DocsV1),
     ),

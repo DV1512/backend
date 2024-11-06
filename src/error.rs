@@ -35,6 +35,8 @@ pub enum ServerResponseError {
     #[error(transparent)]
     GetIdentityError(#[from] actix_identity::error::GetIdentityError),
     #[error(transparent)]
+    ReqwestError(#[from] reqwest::Error),
+    #[error(transparent)]
     GenericError(#[from] anyhow::Error),
 }
 

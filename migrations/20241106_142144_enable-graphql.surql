@@ -1,0 +1,1 @@
+DEFINE CONFIG GRAPHQL TABLES INCLUDE user, session, provider, provider_config, session_of;

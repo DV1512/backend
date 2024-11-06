@@ -4,7 +4,7 @@ name: threatmapper-backend
 
 services:
   db:
-    image: surrealdb/surrealdb:latest-dev
+    image: surrealdb/surrealdb:v2.0.4-dev
     command: start --log info --user root --pass root
     ports:
       - "7352:8000"

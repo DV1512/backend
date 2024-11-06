@@ -40,6 +40,7 @@ use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_scalar::{Scalar, Servable as OtherServable};
 use utoipa_swagger_ui::{Config, SwaggerUi};
+use crate::graphql::graphql_endpoint;
 
 mod auth;
 mod config;
@@ -54,6 +55,7 @@ mod server_error;
 mod state;
 mod swagger;
 mod utils;
+mod graphql;
 
 static INTERNAL_DB: Lazy<Surreal<Client>> = Lazy::new(Surreal::init);
 
@@ -283,6 +285,7 @@ async fn main() -> Result<(), ServerError> {
         let cors = cors();
         let limiter = rate_limiter(rate_limit_backend.clone(), max_requests, limit_duration);
         let logger = LoggingMiddleware::new(log_sender.clone());
+        let logger_tmp = LoggingMiddleware::new(log_sender.clone());
         let identity = IdentityMiddleware::builder()
             .login_deadline(Some(Duration::from_hours(1)))
             .build();
@@ -293,8 +296,10 @@ async fn main() -> Result<(), ServerError> {
             .external_resource("frontend", frontend_url.clone())
             .external_resource("base_url", base_url.clone())
             .service(health_check)
+            .service(graphql_endpoint)
             .service(api(limiter, logger))
             .wrap(cors)
+            .wrap(logger_tmp)
             .wrap(identity)
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), key.clone())
