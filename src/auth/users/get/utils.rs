@@ -1,5 +1,4 @@
 use crate::auth::{UserInfo, Users};
-use crate::{CountResponse, PaginationResponse};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -7,6 +6,7 @@ use surrealdb::Surreal;
 use tokio::try_join;
 use tosic_utils::{Filter, QueryBuilder, Select, Statement};
 use tracing::{error, warn};
+use crate::dto::{CountResponse, PaginationResponse};
 
 #[tracing::instrument(skip(db))]
 pub(crate) async fn get_user_by_token<T>(db: &Arc<Surreal<T>>, token: &str) -> Result<UserInfo>

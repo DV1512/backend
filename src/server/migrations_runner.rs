@@ -1,4 +1,4 @@
-use crate::INTERNAL_DB;
+use crate::server::db::INTERNAL_DB;
 use surrealdb_migrations::MigrationRunner;
 use tracing::{error, info};
 

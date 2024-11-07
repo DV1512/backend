@@ -33,3 +33,21 @@ impl From<Option<Thing>> for IdDTO {
         }
     }
 }
+
+#[derive(Debug, Serialize, Deserialize, PartialOrd, Eq, PartialEq, Clone)]
+pub(crate) struct PaginationResponse {
+    pub(crate) limit: Option<u64>,
+    pub(crate) offset: Option<u64>,
+    pub(crate) total: Option<u64>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub(crate) struct PaginationRequest {
+    pub(crate) limit: Option<u64>,
+    pub(crate) offset: Option<u64>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub(crate) struct CountResponse {
+    pub(crate) count: u64,
+}

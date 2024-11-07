@@ -1,5 +1,5 @@
 use crate::auth::oauth::provider::{OauthProvider, OauthProviderName};
-use crate::{PaginationResponse, Record, INTERNAL_DB};
+use crate::server::db::INTERNAL_DB;
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
 //use surrealdb::sql::{Datetime, Thing};
@@ -8,6 +8,9 @@ use crate::models::thing::Thing;
 use std::string::String;
 //use surrealdb::sql::Thing;
 use utoipa::{ToResponse, ToSchema};
+use crate::dto::PaginationResponse;
+use crate::models::Record;
+
 pub mod oauth;
 pub mod session;
 pub mod users;

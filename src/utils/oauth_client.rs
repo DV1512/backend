@@ -100,7 +100,7 @@ macro_rules! define_oauth_client {
                     }
                     Some(existing_user) => {
                         if let Some(id) = existing_user.id {
-                            crate::Record { id: id.into() }
+                            crate::models::Record { id: id.into() }
                         } else {
                             unreachable!("it should be impossible to reach this since the database requires a id and will populate it");
                         }

@@ -1,7 +1,7 @@
 pub(crate) mod github;
 pub mod google;
 
-use crate::INTERNAL_DB;
+use crate::server::db::INTERNAL_DB;
 use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;

@@ -1,6 +1,6 @@
 use crate::auth::oauth::Oauth;
 use crate::server_error::ServerError;
-use crate::INTERNAL_DB;
+use crate::server::db::INTERNAL_DB;
 use actix_web::web;
 use std::sync::Arc;
 use surrealdb::engine::remote::ws::{Client, Ws};

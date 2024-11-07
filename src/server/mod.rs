@@ -3,6 +3,7 @@ use tracing::info;
 pub mod background_logger;
 pub mod migrations_runner;
 pub mod rate_limiter;
+pub mod db;
 
 pub use migrations_runner::*;
 
@@ -67,7 +68,7 @@ macro_rules! server {
     };
 }
 use crate::init_env::init_env;
-use crate::init_internal_db;
+use db::init_internal_db;
 use crate::logging::init_tracing;
 use crate::server_error::ServerError;
 pub(crate) use server;
