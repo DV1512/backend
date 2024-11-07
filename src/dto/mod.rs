@@ -1,3 +1,6 @@
+//! All items in this module are DTOs that are used to transfer data between
+//! the server and the client. A DTO is not meant to be used as an internal model and therefore is separate from the models module
+
 pub(crate) mod access_token_request;
 pub(crate) mod user_info;
 

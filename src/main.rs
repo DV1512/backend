@@ -40,6 +40,7 @@ use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_scalar::{Scalar, Servable as OtherServable};
 use utoipa_swagger_ui::{Config, SwaggerUi};
+use crate::endpoints::index_scope;
 
 mod auth;
 mod config;
@@ -54,6 +55,9 @@ mod server_error;
 mod state;
 mod swagger;
 mod utils;
+mod services;
+mod endpoints;
+mod server;
 
 static INTERNAL_DB: Lazy<Surreal<Client>> = Lazy::new(Surreal::init);
 
@@ -292,7 +296,7 @@ async fn main() -> Result<(), ServerError> {
             //.wrap(AuthMiddleware) // proof of concept, this should be moved into each individual service we want to secure with auth
             .external_resource("frontend", frontend_url.clone())
             .external_resource("base_url", base_url.clone())
-            .service(health_check)
+            .service(index_scope())
             .service(api(limiter, logger))
             .wrap(cors)
             .wrap(identity)
@@ -302,7 +306,6 @@ async fn main() -> Result<(), ServerError> {
                     .session_lifecycle(PersistentSession::default())
                     .build(),
             )
-            .default_service(web::to(index))
     })
     .bind(format!("0.0.0.0:{port}"))?
     .bind(format!("[::1]:{port}"))?

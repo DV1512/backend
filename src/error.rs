@@ -34,6 +34,10 @@ pub enum ServerResponseError {
     NotAcceptable,
     #[error(transparent)]
     GetIdentityError(#[from] actix_identity::error::GetIdentityError),
+    #[error("Failed dependency")]
+    FailedDependency,
+    #[error("Failed dependency: {0}")]
+    FailedDependencyWithMessage(String),
     #[error(transparent)]
     GenericError(#[from] anyhow::Error),
 }
