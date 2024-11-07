@@ -47,7 +47,7 @@ pub fn oauth_service() -> Scope {
 
 #[allow(dead_code)]
 #[derive(Deserialize, Debug, IntoParams)]
-struct OAuthCallbackQuery {
+pub struct OAuthCallbackQuery {
     #[param(example = "code123")]
     code: String,
     #[param(example = "state123")]
