@@ -1,6 +1,7 @@
 use super::provider::github::GithubProvider;
 use super::scopes::github::{GithubScope, GithubScopes};
 use crate::auth::oauth::error::OauthError;
+use crate::auth::oauth::url_safe_string;
 use crate::auth::oauth::OAuthCallbackQuery;
 use crate::auth::{Role, UserInfo};
 use crate::error::ServerResponseError;
@@ -62,11 +63,7 @@ define_oauth_client!(
         base_url_env: "BASE_URL",
         default_base_url: "http://localhost:9999",
         user_info_mapping: |github_user_info| {
-            let safe_username = {
-                let mut username = github_user_info.login.clone().to_lowercase();
-                username.retain(|c| c.is_ascii_alphanumeric() || c == '_');
-                username
-            };
+            let safe_username = url_safe_string(&github_user_info.login);
 
             Ok::<UserInfo, OauthError>(UserInfo {
                 id: None,

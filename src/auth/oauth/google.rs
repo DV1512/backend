@@ -1,6 +1,7 @@
 use crate::auth::oauth::error::OauthError;
 use crate::auth::oauth::provider::google::GoogleProvider;
 use crate::auth::oauth::scopes::google::{GoogleScope, GoogleScopes};
+use crate::auth::oauth::url_safe_string;
 use crate::auth::oauth::OAuthCallbackQuery;
 use crate::auth::{Role, UserInfo};
 use crate::error::ServerResponseError;
@@ -28,12 +29,7 @@ pub struct GoogleUserInfo {
 
 impl From<GoogleUserInfo> for UserInfo {
     fn from(user_info: GoogleUserInfo) -> Self {
-        let safe_username = {
-            let mut username = user_info.name.clone().to_lowercase();
-            username.retain(|c| c.is_ascii());
-            username.retain(|c| c.is_alphanumeric() || c == '_');
-            username
-        };
+        let safe_username = url_safe_string(&user_info.name);
 
         Self {
             id: None,

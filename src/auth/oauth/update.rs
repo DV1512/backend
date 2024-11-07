@@ -1,3 +1,4 @@
+use crate::auth::oauth::url_safe_string;
 use crate::auth::users::get::utils::get_user_by_token;
 use crate::error::ServerResponseError;
 use crate::extractors::AuthenticatedToken;
@@ -25,13 +26,6 @@ pub struct UserUpdateRequest {
     pub password: Option<String>,
 }
 
-fn url_safe_string(s: String) -> String {
-    s.to_lowercase()
-        .chars()
-        .filter(|c| c.is_alphanumeric() || *c == '_')
-        .collect()
-}
-
 pub async fn update_user_data<T>(
     db: &Arc<Surreal<T>>,
     user_id: Thing,
@@ -41,7 +35,7 @@ where
     T: surrealdb::Connection,
 {
     if let Some(user_info_update) = update_data.user_info_update {
-        let url_safe_username = url_safe_string(user_info_update.username.clone());
+        let url_safe_username = url_safe_string(&user_info_update.username);
         const SQL: &str = "UPDATE $user_id SET
 		username = $username,
 		url_safe_username = $url_safe_username,

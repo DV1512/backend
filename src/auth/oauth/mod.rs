@@ -22,6 +22,13 @@ use register::UserRegistrationRequest;
 use serde::Deserialize;
 use utoipa::{IntoParams, OpenApi};
 
+pub(crate) fn url_safe_string(s: &str) -> String {
+    s.to_lowercase()
+        .chars()
+        .filter(|c| c.is_alphanumeric() || *c == '_')
+        .collect()
+}
+
 #[derive(Debug, Clone)]
 pub struct Oauth {
     pub google: GoogleOauth,
