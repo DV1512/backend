@@ -1,2 +1,2 @@
-pub(crate) mod token;
 pub(crate) mod callback;
+pub(crate) mod token;

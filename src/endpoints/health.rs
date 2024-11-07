@@ -1,5 +1,5 @@
-use helper_macros::generate_endpoint;
 use crate::services::health::check_health;
+use helper_macros::generate_endpoint;
 
 generate_endpoint! {
     fn health;

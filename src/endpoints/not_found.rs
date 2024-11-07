@@ -1,5 +1,5 @@
-use actix_web::{HttpRequest, HttpResponse, Responder};
 use actix_web::http::{header, StatusCode};
+use actix_web::{HttpRequest, HttpResponse, Responder};
 use tracing::error;
 
 pub(crate) async fn not_found(req: HttpRequest) -> impl Responder {

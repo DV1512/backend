@@ -1,3 +1,7 @@
+use crate::auth::oauth::oauth_service;
+use crate::auth::users::user_service;
+use crate::middlewares::logger::LoggingMiddleware;
+use crate::swagger::{ApiDocs, DocsV1};
 use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
 use actix_extensible_rate_limit::backend::{SimpleInputFuture, SimpleOutput};
 use actix_extensible_rate_limit::RateLimiter;
@@ -10,13 +14,12 @@ use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_scalar::{Scalar, Servable as OtherServable};
 use utoipa_swagger_ui::{Config, SwaggerUi};
-use crate::auth::oauth::oauth_service;
-use crate::auth::users::user_service;
-use crate::middlewares::logger::LoggingMiddleware;
-use crate::swagger::{ApiDocs, DocsV1};
 
 pub(crate) mod oauth;
 pub(crate) mod user;
+
+pub(crate) use oauth::*;
+pub(crate) use user::*;
 
 /// All v1 API endpoints
 fn v1_endpoints(
@@ -37,7 +40,7 @@ fn v1_endpoints(
 }
 
 /// All API endpoints
-fn api(
+pub(crate) fn api(
     limiter: RateLimiter<
         InMemoryBackend,
         SimpleOutput,
@@ -46,8 +49,8 @@ fn api(
     logger: LoggingMiddleware,
 ) -> impl actix_web::dev::HttpServiceFactory {
     web::scope("/api")
-        .service(crate::v1_endpoints(limiter, logger))
-        .service(crate::docs())
+        .service(v1_endpoints(limiter, logger))
+        .service(docs())
 }
 
 /// Documentation for only the v1 API. This does not include the docs for non `/api/v1` endpoints as that is done in `docs`
@@ -80,5 +83,5 @@ fn docs() -> impl actix_web::dev::HttpServiceFactory {
         )
         .service(RapiDoc::new("/api/docs/openapi.json").path("/rapidoc"))
         .service(Scalar::with_url("/scalar", openapi.clone()))
-        .service(crate::v1_docs())
+        .service(v1_docs())
 }

@@ -1,63 +1,32 @@
 #![feature(async_closure)]
 #![feature(duration_constructors)]
 
-use crate::auth::oauth::oauth_service;
-use crate::auth::users::user_service;
-use crate::config::{cors, rate_limiter, rate_limiter_data};
-use crate::init_env::init_env;
-use crate::logging::init_tracing;
-use crate::middlewares::auth::AuthType;
-use crate::middlewares::logger::{LogEntry, LoggingMiddleware};
+use crate::server::{server, setup};
 use crate::server_error::ServerError;
-use crate::state::{app_state, AppState};
-use crate::swagger::{ApiDocs, DocsV1};
-use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
-use actix_extensible_rate_limit::backend::{SimpleInputFuture, SimpleOutput};
-use actix_extensible_rate_limit::RateLimiter;
-use actix_identity::IdentityMiddleware;
-use actix_session::config::PersistentSession;
-use actix_session::storage::CookieSessionStore;
-use actix_session::SessionMiddleware;
-use actix_web::cookie::Key;
-use actix_web::dev::ServiceRequest;
-use actix_web::http::{header, StatusCode};
-use actix_web::middleware::NormalizePath;
-use actix_web::{get, web, HttpRequest, HttpResponse, HttpServer, Responder};
-use api_forge::{ApiRequest, Request};
+use crate::state::AppState;
 use helper_macros::generate_endpoint;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use std::time::Duration;
 use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::sql::Thing;
 use surrealdb::Surreal;
-use surrealdb_migrations::MigrationRunner;
-use tokio::sync::mpsc;
-use tracing::{error, info};
-use tracing_actix_web::TracingLogger;
-use utoipa::OpenApi as OpenApiTrait;
-use utoipa_rapidoc::RapiDoc;
-use utoipa_redoc::{Redoc, Servable};
-use utoipa_scalar::{Scalar, Servable as OtherServable};
-use utoipa_swagger_ui::{Config, SwaggerUi};
-use crate::endpoints::index_scope;
 
 mod auth;
 mod config;
 mod dto;
+mod endpoints;
 mod error;
 mod extractors;
 mod init_env;
 mod logging;
 mod middlewares;
 mod models;
+mod server;
 mod server_error;
+mod services;
 mod state;
 mod swagger;
 mod utils;
-mod services;
-mod endpoints;
-mod server;
 
 static INTERNAL_DB: Lazy<Surreal<Client>> = Lazy::new(Surreal::init);
 
@@ -110,207 +79,17 @@ async fn init_internal_db() -> Result<(), ServerError> {
     Ok(())
 }
 
-#[utoipa::path(
-    responses(
-        (status = 200, description = "Health check endpoint", body = String),
-        (status = 424, description = "Database not responding", body = String),
-    ),
-    tag = "health",
-)]
-#[get("/health")]
-pub async fn health_check() -> impl Responder {
-    #[derive(Request, Serialize, Debug)]
-    #[request(endpoint = "/health")]
-    struct DbHealthCheck;
-
-    let request = DbHealthCheck;
-
-    let mut url = tosic_utils::prelude::env!("SURREALDB_URL");
-
-    if !url.starts_with("http://") || !url.starts_with("https://") {
-        url = format!("http://{}", url);
-    }
-
-    if let Err(err) = request.send_request(url.as_str(), None, None).await {
-        error!("Database not responding, error: {}", err);
-
-        HttpResponse::FailedDependency().body("Database not responding")
-    } else {
-        HttpResponse::Ok().body("Ok")
-    }
-}
-
-/// All v1 API endpoints
-fn v1_endpoints(
-    limiter: RateLimiter<
-        InMemoryBackend,
-        SimpleOutput,
-        impl Fn(&ServiceRequest) -> SimpleInputFuture + Sized + 'static,
-    >,
-    logger: LoggingMiddleware,
-) -> impl actix_web::dev::HttpServiceFactory {
-    web::scope("/v1")
-        .wrap(TracingLogger::default()) // this is logging using tracing
-        .wrap(logger) // this is database logging
-        .service(user_service())
-        .service(oauth_service())
-        .wrap(limiter)
-        .wrap(NormalizePath::default())
-}
-
-/// All API endpoints
-fn api(
-    limiter: RateLimiter<
-        InMemoryBackend,
-        SimpleOutput,
-        impl Fn(&ServiceRequest) -> SimpleInputFuture + Sized + 'static,
-    >,
-    logger: LoggingMiddleware,
-) -> impl actix_web::dev::HttpServiceFactory {
-    web::scope("/api")
-        .service(v1_endpoints(limiter, logger))
-        .service(docs())
-}
-
-/// Documentation for only the v1 API. This does not include the docs for non `/api/v1` endpoints as that is done in `docs`
-fn v1_docs() -> impl actix_web::dev::HttpServiceFactory {
-    let openapi = DocsV1::openapi();
-    let config = Config::from("/api/docs/v1/openapi.json");
-
-    web::scope("/v1")
-        .service(Redoc::with_url("/redoc", openapi.clone()))
-        .service(
-            SwaggerUi::new("/swagger/{_:.*}")
-                .url("/openapi.json", openapi.clone())
-                .config(config),
-        )
-        .service(RapiDoc::new("/api/docs/v1/openapi.json").path("/rapidoc"))
-        .service(Scalar::with_url("/scalar", openapi.clone()))
-}
-
-/// Only real reason we have this is to be able to put scoped middlewares for the docs, for example we can add auth middleware to secure the docs
-fn docs() -> impl actix_web::dev::HttpServiceFactory {
-    let openapi = ApiDocs::openapi();
-    let config = Config::from("/api/docs/openapi.json");
-
-    web::scope("/docs")
-        .service(Redoc::with_url("/redoc", openapi.clone()))
-        .service(
-            SwaggerUi::new("/swagger/{_:.*}")
-                .url("/openapi.json", openapi.clone())
-                .config(config),
-        )
-        .service(RapiDoc::new("/api/docs/openapi.json").path("/rapidoc"))
-        .service(Scalar::with_url("/scalar", openapi.clone()))
-        .service(v1_docs())
-}
-
-async fn index(req: HttpRequest) -> impl Responder {
-    let path = req.path();
-    error!("Path not found: {}", path);
-
-    let html = format!(
-        r#"
-        <!doctype html>
-        <html>
-            <head>
-                <title>Error 404</title>
-            </head>
-            <body>
-                <h1>404 - Endpoint not defined</h1>
-                <p>Path: {path}</p>
-            </body>
-        </html>
-        "#,
-    );
-
-    HttpResponse::build(StatusCode::NOT_FOUND)
-        .insert_header(header::ContentType::html())
-        .body(html)
-}
-
 #[actix::main]
 async fn main() -> Result<(), ServerError> {
-    init_env()?;
-
-    init_tracing()?;
-    info!("Logging initialized");
-
-    init_internal_db().await?;
-
-    match MigrationRunner::new(&INTERNAL_DB).up().await {
-        Ok(_) => info!("Migrations ran successfully"),
-        Err(e) => error!("Error running migrations: {}", e),
-    }
+    setup().await?;
 
     let port = tosic_utils::prelude::env!("PORT", "9999");
-    let frontend_url = tosic_utils::prelude::env!("FRONTEND_URL", "http://localhost:5173");
-    let base_url = tosic_utils::prelude::env!("BASE_URL", "http://localhost:9999");
 
-    let (rate_limit_backend, max_requests, limit_duration) =
-        rate_limiter_data(("LIMIT", "100"), ("LIMIT_DURATION", "30"));
-
-    let state = app_state().await?;
-
-    let (log_sender, mut log_receiver) = mpsc::channel::<LogEntry>(100);
-
-    tokio::spawn(async move {
-        while let Some(log) = log_receiver.recv().await {
-            let method = log.method;
-            let path = log.path;
-            let status = log.status;
-            let auth_method = log.user;
-
-            let log = format!("Method: {}, Path: {}, Status: {}", method, path, status);
-
-            match auth_method {
-                Some(AuthType::ApiKey(key)) => {
-                    info!("{}, Access was granted using API key: {} to ", log, key);
-                }
-                Some(AuthType::AccessToken(token)) => {
-                    info!(
-                        "{}, Access was granted using access token: {} to ",
-                        log, token
-                    );
-                }
-                None => {
-                    info!("{}, No Auth present for this request", log);
-                }
-            }
-        }
-    });
-
-    let key = Key::generate();
-
-    info!("Setting up server on port {}", port);
-    HttpServer::new(move || {
-        let cors = cors();
-        let limiter = rate_limiter(rate_limit_backend.clone(), max_requests, limit_duration);
-        let logger = LoggingMiddleware::new(log_sender.clone());
-        let identity = IdentityMiddleware::builder()
-            .login_deadline(Some(Duration::from_hours(1)))
-            .build();
-
-        actix_web::App::new()
-            .app_data(state.clone())
-            //.wrap(AuthMiddleware) // proof of concept, this should be moved into each individual service we want to secure with auth
-            .external_resource("frontend", frontend_url.clone())
-            .external_resource("base_url", base_url.clone())
-            .service(index_scope())
-            .service(api(limiter, logger))
-            .wrap(cors)
-            .wrap(identity)
-            .wrap(
-                SessionMiddleware::builder(CookieSessionStore::default(), key.clone())
-                    .cookie_same_site(actix_web::cookie::SameSite::None)
-                    .session_lifecycle(PersistentSession::default())
-                    .build(),
-            )
-    })
-    .bind(format!("0.0.0.0:{port}"))?
-    .bind(format!("[::1]:{port}"))?
-    .run()
-    .await?;
+    server!()
+        .bind(format!("0.0.0.0:{port}"))?
+        .bind(format!("[::1]:{port}"))?
+        .run()
+        .await?;
 
     Ok(())
 }

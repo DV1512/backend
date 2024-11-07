@@ -1,4 +1,4 @@
-use crate::__path_health_check;
+use crate::endpoints::__path_health;
 use crate::models::{datetime::Datetime, thing::Thing};
 use std::collections::BTreeMap;
 use utoipa::{Modify, OpenApi};
@@ -97,7 +97,7 @@ pub struct DocsV1;
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(health_check),
+    paths(health),
     nest(
         (path = "/", api = DocsV1),
     ),

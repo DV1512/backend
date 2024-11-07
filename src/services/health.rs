@@ -1,8 +1,8 @@
+use crate::error::ServerResponseError;
 use actix_web::{HttpResponse, Responder};
 use api_forge::{ApiRequest, Request};
 use serde::Serialize;
 use tracing::error;
-use crate::error::ServerResponseError;
 
 pub(crate) async fn check_health() -> Result<impl Responder, ServerResponseError> {
     #[derive(Request, Serialize, Debug)]
@@ -17,10 +17,13 @@ pub(crate) async fn check_health() -> Result<impl Responder, ServerResponseError
         url = format!("http://{}", url);
     }
 
-    request.send_request(url.as_str(), None, None).await.map_err(|err| {
-        error!("Database not responding, error: {}", err);
-        ServerResponseError::FailedDependencyWithMessage("Database not responding".into())
-    })?;
+    request
+        .send_request(url.as_str(), None, None)
+        .await
+        .map_err(|err| {
+            error!("Database not responding, error: {}", err);
+            ServerResponseError::FailedDependencyWithMessage("Database not responding".into())
+        })?;
 
     Ok(HttpResponse::Ok())
 }
