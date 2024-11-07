@@ -1,7 +1,7 @@
-use surrealdb::engine::remote::ws::{Client, Ws};
-use once_cell::sync::Lazy;
-use surrealdb::Surreal;
 use crate::server_error::ServerError;
+use once_cell::sync::Lazy;
+use surrealdb::engine::remote::ws::{Client, Ws};
+use surrealdb::Surreal;
 
 pub(crate) static INTERNAL_DB: Lazy<Surreal<Client>> = Lazy::new(Surreal::init);
 

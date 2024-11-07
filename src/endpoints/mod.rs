@@ -11,6 +11,7 @@ use utoipa::OpenApi;
 pub(crate) mod api;
 pub(crate) mod health;
 mod not_found;
+mod test;
 
 use crate::middlewares::logger::LoggingMiddleware;
 pub(crate) use api::*;
