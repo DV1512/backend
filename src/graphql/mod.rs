@@ -1,20 +1,18 @@
-use std::fs::OpenOptions;
-use std::io::Write;
-use actix_web::{web, HttpRequest, HttpResponse, Responder};
-use reqwest::Client;
-use serde_json::Value;
-use serde::{Deserialize, Serialize};
-use helper_macros::generate_endpoint;
+pub(crate) mod engine;
+
 use crate::error::ServerResponseError;
 use crate::extractors::Authenticated;
-use crate::state::AppState;
-use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
+use actix_web::{HttpResponse, Responder};
+use async_graphql_actix_web::GraphQLRequest;
+use helper_macros::generate_endpoint;
+use reqwest::Client;
+use serde_json::Value;
 use tracing::error;
 
 async fn send_graphql_request(
     client: &Client,
     endpoint: String,
-    request: GraphQLRequest
+    request: GraphQLRequest,
 ) -> Result<Value, ServerResponseError> {
     let data = request.into_inner();
 
@@ -31,7 +29,10 @@ async fn send_graphql_request(
     if !response.status().is_success() {
         let body = response.text().await.unwrap_or_default();
         error!("Error forwarding GraphQL request: {}", body);
-        return Err(ServerResponseError::InternalError(format!("Error forwarding GraphQL request: {}", body)));
+        return Err(ServerResponseError::InternalError(format!(
+            "Error forwarding GraphQL request: {}",
+            body
+        )));
     }
 
     let json: Value = match response.json().await {
@@ -45,14 +46,13 @@ async fn send_graphql_request(
 }
 
 async fn handle_req(data: GraphQLRequest) -> impl Responder {
-    let endpoint = format!("http://{}/graphql", tosic_utils::prelude::env!("SURREALDB_URL"));
+    let endpoint = format!(
+        "http://{}/graphql",
+        tosic_utils::prelude::env!("SURREALDB_URL")
+    );
     let client = Client::new();
 
-    match send_graphql_request(
-        &client,
-        endpoint,
-        data
-    ).await {
+    match send_graphql_request(&client, endpoint, data).await {
         Ok(response_json) => HttpResponse::Ok().json(response_json),
         Err(e) => {
             error!("Error forwarding GraphQL request: {:?}", e);

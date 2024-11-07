@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 //use surrealdb::sql::{Datetime, Thing};
 use crate::models::datetime::Datetime;
 use crate::models::thing::Thing;
+use async_graphql::SimpleObject;
 use std::string::String;
 //use surrealdb::sql::Thing;
 use utoipa::{ToResponse, ToSchema};
@@ -20,9 +21,12 @@ pub enum Role {
     User,
 }
 
-#[derive(Default, Debug, Serialize, Deserialize, Clone, ToSchema, PartialOrd, Eq, PartialEq)]
+#[derive(
+    Default, Debug, Serialize, Deserialize, Clone, ToSchema, PartialOrd, Eq, PartialEq, SimpleObject,
+)]
 pub struct UserInfo {
     #[schema(example = "user:123456")]
+    #[graphql(skip)]
     pub id: Option<Thing>,
     #[schema(example = "johndoe@example.com")]
     pub email: String,
@@ -35,11 +39,14 @@ pub struct UserInfo {
     #[schema(example = "Doe")]
     pub last_name: String,
     #[schema(example = "2021-09-15T14:28:23Z")]
+    #[graphql(skip)]
     pub created_at: Datetime,
     #[schema(example = "2021-09-15T14:28:23Z")]
+    #[graphql(skip)]
     pub last_login: Option<Datetime>,
     #[schema(example = "https://example.com/avatar.jpg")]
     pub picture: Option<String>,
+    #[graphql(skip)]
     pub role: Role,
 }
 
@@ -67,11 +74,12 @@ pub enum UserInfoExampleResponses {
     User(#[content("application/json")] UserInfo),
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialOrd, Eq, PartialEq, Clone)]
+#[derive(Debug, Serialize, Deserialize, PartialOrd, Eq, PartialEq, Clone, SimpleObject)]
 pub(crate) struct Users {
     pub(crate) users: Vec<UserInfo>,
 
     #[serde(flatten)]
+    #[graphql(flatten)]
     pub(crate) pagination: PaginationResponse,
 }
 

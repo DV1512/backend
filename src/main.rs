@@ -4,6 +4,8 @@
 use crate::auth::oauth::oauth_service;
 use crate::auth::users::user_service;
 use crate::config::{cors, rate_limiter, rate_limiter_data};
+use crate::graphql::engine::graphql_test;
+use crate::graphql::graphql_endpoint;
 use crate::init_env::init_env;
 use crate::logging::init_tracing;
 use crate::middlewares::auth::AuthType;
@@ -24,6 +26,7 @@ use actix_web::http::{header, StatusCode};
 use actix_web::middleware::NormalizePath;
 use actix_web::{get, web, HttpRequest, HttpResponse, HttpServer, Responder};
 use api_forge::{ApiRequest, Request};
+use async_graphql::SimpleObject;
 use helper_macros::generate_endpoint;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
@@ -40,13 +43,13 @@ use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_scalar::{Scalar, Servable as OtherServable};
 use utoipa_swagger_ui::{Config, SwaggerUi};
-use crate::graphql::graphql_endpoint;
 
 mod auth;
 mod config;
 mod dto;
 mod error;
 mod extractors;
+mod graphql;
 mod init_env;
 mod logging;
 mod middlewares;
@@ -55,7 +58,6 @@ mod server_error;
 mod state;
 mod swagger;
 mod utils;
-mod graphql;
 
 static INTERNAL_DB: Lazy<Surreal<Client>> = Lazy::new(Surreal::init);
 
@@ -64,7 +66,7 @@ pub struct Record {
     id: Thing,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialOrd, Eq, PartialEq, Clone)]
+#[derive(Debug, Serialize, Deserialize, PartialOrd, Eq, PartialEq, Clone, SimpleObject)]
 pub(crate) struct PaginationResponse {
     limit: Option<u64>,
     offset: Option<u64>,
@@ -297,6 +299,7 @@ async fn main() -> Result<(), ServerError> {
             .external_resource("base_url", base_url.clone())
             .service(health_check)
             .service(graphql_endpoint)
+            .service(graphql_test)
             .service(api(limiter, logger))
             .wrap(cors)
             .wrap(logger_tmp)

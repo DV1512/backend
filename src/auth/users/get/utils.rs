@@ -32,17 +32,17 @@ where
 #[derive(Default, Debug, Serialize, Deserialize, Clone)]
 pub(crate) struct GetUserByFilter {
     #[serde(skip_serializing_if = "Option::is_none")]
-    email: Option<String>,
+    pub(crate) email: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    username: Option<String>,
+    pub(crate) username: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    user_id: Option<String>,
+    pub(crate) user_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    url_safe_username: Option<String>,
+    pub(crate) url_safe_username: Option<String>,
     /*#[serde(flatten)]
     pagination: PaginationRequest*/
-    limit: Option<u64>,
-    offset: Option<u64>,
+    pub(crate) limit: Option<u64>,
+    pub(crate) offset: Option<u64>,
 }
 
 impl From<GetUserByFilter> for Filter {
