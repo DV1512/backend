@@ -68,9 +68,7 @@ use github::__path_login as __path_github_login;
 use google::*;
 
 use crate::auth::oauth::register::__path_register_endpoint;
-use crate::auth::oauth::update::{
-    UserInfoUpdateRequest, UserUpdateRequest, __path_user_update_endpoint,
-};
+use crate::auth::oauth::update::{UserUpdateRequest, __path_user_update_endpoint};
 use crate::models::{access_token::AccessToken, refresh_token::RefreshToken};
 use local::{TokenRequest, TokenResponse, TokenResponseExample, TokenType, __path_token};
 use logout::__path_logout;
@@ -93,7 +91,6 @@ use logout::__path_logout;
             TokenResponse,
             TokenType,
             UserRegistrationRequest,
-            UserInfoUpdateRequest,
             UserUpdateRequest
         ),
         responses(TokenResponseExample)
