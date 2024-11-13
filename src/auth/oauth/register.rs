@@ -1,18 +1,22 @@
-use crate::auth::{users::create::register_user};
+use crate::auth::users::create::register_user;
 use crate::state::AppState;
 use actix_web::{web, HttpResponse};
 use helper_macros::generate_endpoint;
 use serde::{Deserialize, Serialize};
-use utoipa::{IntoParams, ToSchema};
+use utoipa::ToSchema;
 
-/// Contains the data used to register a new user. This involves
-/// creating new entries in both the 'user' and 'user_auth' tables.
-#[derive(Serialize, Deserialize, ToSchema, IntoParams)]
-pub struct UserRegistrationRequest {
+#[derive(Serialize, Deserialize, ToSchema)]
+pub struct UserCreationRequest {
     pub username: String,
     pub first_name: Option<String>,
     pub last_name: Option<String>,
     pub email: String,
+}
+
+#[derive(Serialize, Deserialize, ToSchema)]
+pub struct UserRegistrationRequest {
+    #[serde(flatten)]
+    pub user: UserCreationRequest,
     pub password: String,
 }
 

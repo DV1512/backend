@@ -62,7 +62,7 @@ where
     ";
 
     db.query(REGISTER_USER_SQL)
-        .bind(("user_content", user_registration))
+        .bind(("user_content", user_registration.user))
         .bind(("password", password))
         .await?
         .check()?;
