@@ -1,7 +1,6 @@
 use crate::auth::oauth::error::OauthError;
 use crate::auth::oauth::provider::google::GoogleProvider;
 use crate::auth::oauth::scopes::google::{GoogleScope, GoogleScopes};
-use crate::auth::oauth::url_safe_string;
 use crate::auth::oauth::OAuthCallbackQuery;
 use crate::auth::{Role, UserInfo};
 use crate::error::ServerResponseError;
@@ -29,12 +28,10 @@ pub struct GoogleUserInfo {
 
 impl From<GoogleUserInfo> for UserInfo {
     fn from(user_info: GoogleUserInfo) -> Self {
-        let safe_username = url_safe_string(&user_info.name);
-
         Self {
             id: None,
             email: user_info.email,
-            url_safe_username: safe_username,
+            url_safe_username: None,
             username: user_info.name,
             first_name: user_info.given_name,
             last_name: user_info.family_name,

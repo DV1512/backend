@@ -1,4 +1,3 @@
-use crate::auth::oauth::url_safe_string;
 use crate::auth::users::get::utils::get_user_by_token;
 use crate::error::ServerResponseError;
 use crate::extractors::AuthenticatedToken;
@@ -28,7 +27,6 @@ pub async fn update_user_data<T>(
 where
     T: surrealdb::Connection,
 {
-    let url_safe_username = url_safe_string(&update_data.username);
     const SQL: &str = "UPDATE $user_id SET
 		username = $username,
 		url_safe_username = $url_safe_username,
@@ -37,7 +35,6 @@ where
     db.query(SQL)
         .bind(("user_id", user_id.clone()))
         .bind(("username", update_data.username))
-        .bind(("url_safe_username", url_safe_username))
         .bind(("first_name", update_data.first_name))
         .bind(("last_name", update_data.last_name))
         .await?;

@@ -27,7 +27,7 @@ pub struct UserInfo {
     #[schema(example = "johndoe@example.com")]
     pub email: String,
     #[schema(example = "johndoe")]
-    pub url_safe_username: String,
+    pub url_safe_username: Option<String>,
     #[schema(example = "John Doe")]
     pub username: String,
     #[schema(example = "John")]
