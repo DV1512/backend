@@ -6,7 +6,7 @@ create_dto! {
     UserInfo,
     struct UserInfoDTO {
         pub email: String,
-        pub url_safe_username: String,
+        pub url_safe_username: Option<String>,
         pub username: String,
         pub first_name: String,
         pub last_name: String,

@@ -62,16 +62,10 @@ define_oauth_client!(
         base_url_env: "BASE_URL",
         default_base_url: "http://localhost:9999",
         user_info_mapping: |github_user_info| {
-            let safe_username = {
-                let mut username = github_user_info.login.clone().to_lowercase();
-                username.retain(|c| c.is_ascii_alphanumeric() || c == '_');
-                username
-            };
-
             Ok::<UserInfo, OauthError>(UserInfo {
                 id: None,
                 email: github_user_info.email.unwrap_or_default(),
-                url_safe_username: safe_username,
+                url_safe_username: None,
                 username: github_user_info.name.unwrap_or_else(|| github_user_info.login.clone()),
                 first_name: "".to_string(),
                 last_name: "".to_string(),

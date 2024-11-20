@@ -28,17 +28,10 @@ pub struct GoogleUserInfo {
 
 impl From<GoogleUserInfo> for UserInfo {
     fn from(user_info: GoogleUserInfo) -> Self {
-        let safe_username = {
-            let mut username = user_info.name.clone().to_lowercase();
-            username.retain(|c| c.is_ascii());
-            username.retain(|c| c.is_alphanumeric() || c == '_');
-            username
-        };
-
         Self {
             id: None,
             email: user_info.email,
-            url_safe_username: safe_username,
+            url_safe_username: None,
             username: user_info.name,
             first_name: user_info.given_name,
             last_name: user_info.family_name,
