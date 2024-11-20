@@ -1,5 +1,5 @@
-use crate::auth::oauth::oauth_service;
-use crate::auth::users::user_service;
+use oauth::oauth_service;
+use user::user_service;
 use crate::middlewares::logger::LoggingMiddleware;
 use crate::swagger::{ApiDocs, DocsV1};
 use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
