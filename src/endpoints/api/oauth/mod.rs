@@ -14,14 +14,23 @@ pub(crate) use {github::*, google::*, register::*, revoke::*, token::*};
 pub fn oauth_service() -> Scope {
     web::scope("/oauth")
         .service(google_oauth_service())
+        .service(github_oauth_service())
         .guard(Acceptable::new(mime::APPLICATION_JSON).match_star_star())
-
+        .service(token)
+        .service(register)
+        .service(revoke)
 }
 
 #[derive(OpenApi)]
 #[openapi(
+    paths(
+        token,
+        register,
+        revoke
+    ),
     nest(
         (path = "/google", api = google::GoogleApi),
+        (path = "/github", api = github::GithubApi)
     ),
     components(
         schemas(),

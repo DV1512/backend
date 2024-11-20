@@ -16,7 +16,7 @@ use actix_web::guard::Acceptable;
 use actix_web::{web, Scope};
 use anyhow::Result;
 use logout::logout as logout_endpoint;
-use register::UserRegistrationRequest;
+use crate::dto::UserRegistrationRequest;
 use serde::Deserialize;
 use utoipa::{IntoParams, OpenApi};
 

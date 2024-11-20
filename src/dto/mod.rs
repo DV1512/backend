@@ -6,8 +6,10 @@
 pub(crate) mod access_token_request;
 pub(crate) mod user_info;
 pub(crate) mod oauth_callback;
+pub(crate) mod user_registration_request;
+pub(crate) mod token;
 
-pub(crate) use {access_token_request::*, oauth_callback::*, user_info::*};
+pub(crate) use {access_token_request::*, oauth_callback::*, user_info::*, user_registration_request::*, token::*};
 
 use crate::models::thing::Thing;
 use serde::{Deserialize, Serialize};

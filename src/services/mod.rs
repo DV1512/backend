@@ -2,3 +2,4 @@
 //! this allows us to call the functions of more complex logic from within the API.
 
 pub(crate) mod health;
+pub(crate) mod token;
