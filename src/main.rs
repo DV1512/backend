@@ -4,6 +4,7 @@
 use crate::auth::oauth::oauth_service;
 use crate::auth::users::user_service;
 use crate::config::{cors, rate_limiter, rate_limiter_data};
+use crate::files::files_service;
 use crate::init_env::init_env;
 use crate::logging::init_tracing;
 use crate::middlewares::auth::AuthType;
@@ -46,6 +47,7 @@ mod config;
 mod dto;
 mod error;
 mod extractors;
+mod files;
 mod init_env;
 mod logging;
 mod middlewares;
@@ -150,6 +152,7 @@ fn v1_endpoints(
         .wrap(logger) // this is database logging
         .service(user_service())
         .service(oauth_service())
+        .service(files_service())
         .wrap(limiter)
         .wrap(NormalizePath::default())
 }
