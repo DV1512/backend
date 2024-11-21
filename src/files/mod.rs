@@ -1,4 +1,7 @@
+use crate::auth::users::get::utils::get_user_by_token;
 use crate::error::ServerResponseError;
+use crate::extractors::AuthenticatedToken;
+use crate::extractors::IntoSession;
 use crate::models::datetime::Datetime;
 use crate::models::thing::Thing;
 use crate::state::AppState;
@@ -9,6 +12,8 @@ use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::sync::Arc;
+use surrealdb::sql::thing;
+use surrealdb::RecordId;
 use surrealdb::Surreal;
 
 // TODO: Replace with environment variable
@@ -18,20 +23,39 @@ const UPLOAD_DIRECTORY: &str = "/Users/gustav/uploads/";
 struct Content {
     filename: String,
 }
+
+#[derive(Serialize, Deserialize)]
+struct FileUserRelation {
+    #[serde(rename = "in")]
+    file: RecordId,
+    #[serde(rename = "out")]
+    user: RecordId,
+}
+
 async fn insert<T>(
     db: &Arc<Surreal<T>>,
     filename: String,
+    user_id: Thing,
 ) -> Result<FileMetadata, ServerResponseError>
 where
     T: surrealdb::Connection,
 {
-    let created = db.create("file").content(Content { filename }).await?;
-    match created {
-        Some(id) => Ok(id),
-        None => Err(ServerResponseError::InternalError(
-            "Error creating file metadata".to_string(),
-        )),
-    }
+    const SQL: &str = "
+        BEGIN TRANSACTION;
+        LET $FILE = (CREATE file SET filename = $FILENAME);
+        RELATE ($FILE) -> files_for -> ($USER);
+        COMMIT TRANSACTION;
+        SELECT * FROM $FILE;";
+
+    let created: Option<FileMetadata> = db
+        .query(SQL)
+        .bind(("FILENAME", filename))
+        .bind(("USER", user_id))
+        .await?
+        .take(2)?;
+    created.ok_or(ServerResponseError::InternalError(
+        "Error inserting file metadata into database".to_string(),
+    ))
 }
 
 async fn get<T>(db: &Arc<Surreal<T>>, id: String) -> Result<FileMetadata, ServerResponseError>
@@ -71,15 +95,21 @@ struct UploadForm {
 
 #[post("")]
 async fn upload_file(
-    state: web::Data<AppState>,
     MultipartForm(form): MultipartForm<UploadForm>,
+    auth: AuthenticatedToken,
+    state: web::Data<AppState>,
 ) -> Result<impl Responder, ServerResponseError> {
     let Some(filename) = form.file.file_name else {
         return Err(ServerResponseError::BadRequest(
             "Uploaded file had no filename".to_string(),
         ));
     };
-    let metadata = insert(&state.db, filename).await?;
+
+    let token = auth.get_token();
+    let user = get_user_by_token(&state.db, &token).await?;
+    let user_id = user.id.ok_or(ServerResponseError::NotFound)?;
+
+    let metadata = insert(&state.db, filename, user_id).await?;
 
     let upload_path = std::path::PathBuf::from(UPLOAD_DIRECTORY);
     let file_path = upload_path.join(metadata.id.id.to_string());
