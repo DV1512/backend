@@ -1,13 +1,13 @@
-use crate::auth::users::get::utils::get_user_by_token;
+use crate::dto::user_update_request::UserUpdateRequest;
 use crate::error::ServerResponseError;
 use crate::extractors::AuthenticatedToken;
 use crate::extractors::IntoSession;
 use crate::generate_endpoint;
+use crate::services::user::update::*;
+use crate::services::user::utils::get_user_by_token;
 use crate::state::AppState;
 use actix_web::{web, HttpResponse};
 use utoipa::ToSchema;
-use crate::dto::user_update_request::UserUpdateRequest;
-use crate::services::update_user::update_user_data;
 
 generate_endpoint! {
     fn update_user;

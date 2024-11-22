@@ -1,8 +1,8 @@
+use crate::dto::UserRegistrationRequest;
+use crate::services::user::create::register_user;
+use crate::state::AppState;
 use actix_web::{web, HttpResponse};
 use helper_macros::generate_endpoint;
-use crate::dto::UserRegistrationRequest;
-use crate::auth::users::create::register_user;
-use crate::state::AppState;
 
 generate_endpoint! {
     fn register;

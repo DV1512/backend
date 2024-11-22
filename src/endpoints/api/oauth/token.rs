@@ -1,14 +1,14 @@
-use actix_identity::Identity;
-use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
-use actix_web::http::header;
-use actix_web::http::header::CacheDirective;
-use tracing::info;
-use helper_macros::generate_endpoint;
 use crate::dto::{TokenRequest, TokenResponse, TokenResponseExample};
-use crate::auth::session::UserSession;
 use crate::error::ServerResponseError;
+use crate::models::session::UserSession;
 use crate::services::token::validate_user;
 use crate::state::AppState;
+use actix_identity::Identity;
+use actix_web::http::header;
+use actix_web::http::header::CacheDirective;
+use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
+use helper_macros::generate_endpoint;
+use tracing::info;
 
 generate_endpoint! {
     fn token;

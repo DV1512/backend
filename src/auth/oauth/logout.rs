@@ -1,4 +1,4 @@
-use crate::auth::session::UserSession;
+use crate::models::session::UserSession;
 use crate::error::ServerResponseError;
 use crate::generate_endpoint;
 use actix_web::HttpResponse;

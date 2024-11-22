@@ -1,5 +1,5 @@
 /*use crate::auth::users::create::register_user;
-use crate::auth::UserInfo;
+use crate::models::user_info::UserInfo;
 use crate::state::AppState;
 use actix_web::{web, HttpResponse};
 use helper_macros::generate_endpoint;

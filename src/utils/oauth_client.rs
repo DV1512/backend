@@ -70,7 +70,7 @@ macro_rules! define_oauth_client {
                 &self,
                 code: String,
                 db: &::std::sync::Arc<surrealdb::Surreal<C>>,
-            ) -> Result<crate::auth::session::UserSession, crate::auth::oauth::error::OauthError>
+            ) -> Result<crate::models::session::UserSession, crate::auth::oauth::error::OauthError>
             {
                 let token = self.basic.exchange_code_for_token(code).await?;
 
@@ -85,11 +85,11 @@ macro_rules! define_oauth_client {
 
                 let user = user_info;
 
-                let db_user = crate::auth::users::get::get_user(db, &user.email).await;
+                let db_user = crate::services::user::get::get_user(db, &user.email).await;
 
                 let record = match db_user {
                     None => {
-                        let new_user_record = crate::auth::users::create::create_user(db, user.clone()).await?;
+                        let new_user_record = crate::services::user::create::create_user(db, user.clone()).await?;
                         crate::auth::create_auth_for_user(
                             new_user_record.clone(),
                             vec![self.details.clone().into()],
@@ -110,14 +110,14 @@ macro_rules! define_oauth_client {
                 let access_token = token.access_token().secret().to_string();
                 let refresh_token = token.refresh_token().map(|t| t.secret().to_string());
 
-                let session = match crate::auth::session::UserSession::fetch_by_email(user.email.clone()).await {
+                let session = match crate::models::session::UserSession::fetch_by_email(user.email.clone()).await {
                     Some(mut s) => {
                         s.access_token = access_token;
                         s.refresh_token = refresh_token;
                         s.update().await?
                     }
                     None => {
-                        crate::auth::session::UserSession::new(access_token, refresh_token, user.email, record.id)
+                        crate::models::session::UserSession::new(access_token, refresh_token, user.email, record.id)
                             .create()
                             .await?
                     }
@@ -130,7 +130,7 @@ macro_rules! define_oauth_client {
                 &self,
                 code: String,
                 db: &::std::sync::Arc<surrealdb::Surreal<C>>,
-            ) -> Result<crate::auth::session::UserSession, crate::auth::oauth::error::OauthError> {
+            ) -> Result<crate::models::session::UserSession, crate::auth::oauth::error::OauthError> {
                 self.exchange_code_internal(code, db).await
             }
 

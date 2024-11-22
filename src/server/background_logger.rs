@@ -1,10 +1,9 @@
-use surrealdb::sql::Thing;
 use crate::middlewares::auth::AuthType;
 use crate::middlewares::logger::LogEntry;
+use crate::state::db;
+use surrealdb::sql::Thing;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::{Receiver, Sender};
-use tracing::{info, warn};
-use crate::state::db;
 
 pub fn background_logger() -> Sender<LogEntry> {
     let (log_sender, log_receiver) = mpsc::channel::<LogEntry>(100);
@@ -16,7 +15,9 @@ pub fn background_logger() -> Sender<LogEntry> {
 
 #[inline]
 async fn logger(mut receiver: Receiver<LogEntry>) {
-    let db = db("default", "log").await.expect("unable to connect to database");
+    let db = db("default", "log")
+        .await
+        .expect("unable to connect to database");
 
     while let Some(log) = receiver.recv().await {
         /*let method = log.method;
@@ -41,6 +42,10 @@ async fn logger(mut receiver: Receiver<LogEntry>) {
             }
         }*/
 
-        let _: Option<LogEntry> = db.create("log").content(log).await.expect("Unable to insert log");
+        let _: Option<LogEntry> = db
+            .create("log")
+            .content(log)
+            .await
+            .expect("Unable to insert log");
     }
 }

@@ -1,4 +1,4 @@
-use crate::auth::session::UserSession;
+use crate::models::session::UserSession;
 use crate::error::ServerResponseError;
 use crate::models::{access_token::AccessToken, refresh_token::RefreshToken};
 use crate::state::AppState;

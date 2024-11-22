@@ -1,7 +1,6 @@
 use super::provider::github::GithubProvider;
 use super::scopes::github::{GithubScope, GithubScopes};
 use crate::auth::oauth::error::OauthError;
-use crate::auth::oauth::OAuthCallbackQuery;
 use crate::auth::{Role, UserInfo};
 use crate::error::ServerResponseError;
 use crate::models::datetime::Datetime;
@@ -77,77 +76,3 @@ define_oauth_client!(
         },
     }
 );
-
-generate_endpoint! {
-    fn login;
-    method: get;
-    path: "/login";
-    docs: {
-        context_path: "/github",
-        tag: "oauth",
-        responses: {
-            (status = 302, description = "Redirect to Github login page"),
-        }
-    }
-    params: {
-        state: web::Data<AppState>,
-    };
-    {
-        info!("Redirecting to Github login page");
-        let oauth = state.oauth.clone();
-
-        let (auth_url, _csrf_token) = oauth.github.get_auth_url();
-
-        Ok(HttpResponse::Found()
-            .append_header(("Location", auth_url))
-            .finish())
-    }
-}
-
-generate_endpoint! {
-    fn callback;
-    method: get;
-    path: "/callback";
-    docs: {
-        context_path: "/github",
-        tag: "oauth",
-        responses: {
-            (status = 302, description = "Redirect to frontend"),
-        }
-    }
-    params: {
-        state: web::Data<AppState>,
-        query: web::Query<OAuthCallbackQuery>,
-        req: HttpRequest,
-    };
-    {
-        info!("Google callback received");
-
-        let oauth = state.oauth.clone();
-
-        let frontend_url = req.url_for_static("frontend").unwrap().to_string();
-
-        match oauth
-            .github
-            .exchange_code(query.code.clone(), &state.db)
-            .await
-        {
-            Ok(session) => {
-                let redirect_url = format!("{}redirect?token={}", frontend_url, session.access_token);
-
-                Ok(HttpResponse::Found()
-                    .append_header(("Location", redirect_url))
-                    .finish())
-            }
-
-            Err(err) => {
-                error!("Error exchanging code: {}", err);
-                Err(ServerResponseError::InternalError(err.to_string()))
-            }
-        }
-    }
-}
-
-pub fn github_oauth_service() -> Scope {
-    web::scope("/github").service(login).service(callback)
-}

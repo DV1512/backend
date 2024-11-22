@@ -1,10 +1,10 @@
-use actix_web::web;
-use tracing::info;
-use helper_macros::generate_endpoint;
-use crate::auth::UserInfoExampleResponses;
-use crate::auth::users::get::{get_user_by_internal, GetUserBy};
 use crate::extractors::Authenticated;
+use crate::models::user_info::UserInfoExampleResponses;
+use crate::services::user::get::{get_user_by_internal, GetUserBy};
 use crate::state::AppState;
+use actix_web::web;
+use helper_macros::generate_endpoint;
+use tracing::info;
 
 generate_endpoint! {
     fn get_user_by;
@@ -37,4 +37,3 @@ generate_endpoint! {
         Ok(web::Json(user))
     }
 }
-

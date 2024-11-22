@@ -1,5 +1,3 @@
-use oauth::oauth_service;
-use user::user_service;
 use crate::middlewares::logger::LoggingMiddleware;
 use crate::swagger::{ApiDocs, DocsV1};
 use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
@@ -8,7 +6,9 @@ use actix_extensible_rate_limit::RateLimiter;
 use actix_web::dev::ServiceRequest;
 use actix_web::middleware::NormalizePath;
 use actix_web::web;
+use oauth::oauth_service;
 use tracing_actix_web::TracingLogger;
+use user::user_service;
 use utoipa::OpenApi;
 use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};

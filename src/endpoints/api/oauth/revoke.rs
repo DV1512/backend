@@ -1,6 +1,6 @@
+use crate::models::session::UserSession;
 use actix_web::HttpResponse;
 use helper_macros::generate_endpoint;
-use crate::auth::session::UserSession;
 
 generate_endpoint! {
     fn revoke;

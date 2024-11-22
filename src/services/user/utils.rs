@@ -1,6 +1,5 @@
-/*
-use crate::auth::{UserInfo, Users};
 use crate::dto::{CountResponse, PaginationResponse};
+use crate::models::user_info::{UserInfo, Users};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -125,4 +124,3 @@ where
 
     Ok(response)
 }
-*/
