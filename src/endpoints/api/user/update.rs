@@ -14,7 +14,7 @@ generate_endpoint! {
     method: put;
     path: "";
     docs: {
-        tag: "oauth",
+        tag: "user",
         responses: {
             (status = 200, description = "User updated successfully"),
             (status = 401, description = "Not logged in"),
