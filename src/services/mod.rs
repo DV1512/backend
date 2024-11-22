@@ -3,3 +3,4 @@
 
 pub(crate) mod health;
 pub(crate) mod token;
+pub(crate) mod update_user;

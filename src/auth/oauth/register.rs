@@ -1,11 +1,25 @@
-use crate::auth::users::create::register_user;
+/*use crate::auth::users::create::register_user;
 use crate::auth::UserInfo;
 use crate::state::AppState;
 use actix_web::{web, HttpResponse};
 use helper_macros::generate_endpoint;
 use serde::{Deserialize, Serialize};
-use utoipa::{IntoParams, ToSchema};
-use crate::dto::UserRegistrationRequest;
+use utoipa::ToSchema;
+
+#[derive(Serialize, Deserialize, ToSchema)]
+pub struct UserCreationRequest {
+    pub username: String,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+    pub email: String,
+}
+
+#[derive(Serialize, Deserialize, ToSchema)]
+pub struct UserRegistrationRequest {
+    #[serde(flatten)]
+    pub user: UserCreationRequest,
+    pub password: String,
+}
 
 generate_endpoint! {
     fn register_endpoint;
@@ -26,4 +40,4 @@ generate_endpoint! {
         register_user(&state.db, data.0).await?;
         Ok(HttpResponse::Created().finish())
     }
-}
+}*/

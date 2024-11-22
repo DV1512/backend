@@ -10,12 +10,11 @@ pub async fn create_user<T>(db: &Arc<Surreal<T>>, user: UserInfo) -> Result<Reco
 where
     T: surrealdb::Connection,
 {
-    let sql = "CREATE user SET username = $username, url_safe_username = $url_safe_username, first_name = $first_name, last_name = $last_name, email = $email, picture = $picture, role = $role";
+    let sql = "CREATE user SET username = $username, first_name = $first_name, last_name = $last_name, email = $email, picture = $picture, role = $role";
 
     let mut res = db
         .query(sql)
         .bind(("username", user.username.clone()))
-        .bind(("url_safe_username", user.url_safe_username.clone()))
         .bind(("first_name", user.first_name.clone()))
         .bind(("last_name", user.last_name.clone()))
         .bind(("email", user.email.clone()))
@@ -43,7 +42,6 @@ where
     T: surrealdb::Connection,
 {
     let password = user_registration.password.clone();
-    let user = UserInfo::from(user_registration);
 
     const REGISTER_USER_SQL: &str = "
         BEGIN TRANSACTION;
@@ -64,7 +62,7 @@ where
     ";
 
     db.query(REGISTER_USER_SQL)
-        .bind(("user_content", user))
+        .bind(("user_content", user_registration.user))
         .bind(("password", password))
         .await?
         .check()?;

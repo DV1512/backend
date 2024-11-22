@@ -83,8 +83,8 @@ impl Modify for OpenApiSecurityConfig {
 #[derive(OpenApi)]
 #[openapi(
     nest(
-        (path = "/user", api = crate::auth::users::UserApi),
-        (path = "/oauth", api = crate::auth::oauth::OauthApi),
+        (path = "/user", api = crate::endpoints::api::user::UserApi),
+        (path = "/oauth", api = crate::endpoints::api::oauth::OauthApi),
     ),
     components(schemas(Datetime, Thing), responses()),
     tags(
