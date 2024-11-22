@@ -32,10 +32,10 @@ fn v1_endpoints(
 ) -> impl actix_web::dev::HttpServiceFactory {
     web::scope("/v1")
         .wrap(TracingLogger::default()) // this is logging using tracing
-        .wrap(logger) // this is database logging
         .service(user_service())
         .service(oauth_service())
         .wrap(limiter)
+        .wrap(logger) // this is database logging
         .wrap(NormalizePath::default())
 }
 
