@@ -43,11 +43,22 @@ where
     ))
 }
 
-async fn get<T>(db: &Arc<Surreal<T>>, id: String) -> Result<FileMetadata, ServerResponseError>
+async fn get<T>(
+    db: &Arc<Surreal<T>>,
+    file_id: String,
+    user_id: Thing,
+) -> Result<FileMetadata, ServerResponseError>
 where
     T: surrealdb::Connection,
 {
-    let found: Option<FileMetadata> = db.select(("file", id)).await?;
+    const SQL: &str =
+        "SELECT VALUE in FROM files_for WHERE meta::id(in) = $FILE AND out = $USER FETCH in;";
+    let found = db
+        .query(SQL)
+        .bind(("FILE", file_id))
+        .bind(("USER", user_id))
+        .await?
+        .take(0)?;
     match found {
         Some(file) => Ok(file),
         None => Err(ServerResponseError::NotFound),
@@ -108,11 +119,17 @@ async fn upload_file(
 
 #[get("/{file_id}")]
 async fn get_file(
+    file_id: web::Path<String>,
+    auth: AuthenticatedToken,
     state: web::Data<AppState>,
-    id: web::Path<String>,
 ) -> Result<impl Responder, ServerResponseError> {
-    let id = id.into_inner();
-    let file_metadata = get(&state.db, id).await?;
+    let file_id = file_id.into_inner();
+
+    let token = auth.get_token();
+    let user = get_user_by_token(&state.db, &token).await?;
+    let user_id = user.id.ok_or(ServerResponseError::NotFound)?;
+
+    let file_metadata = get(&state.db, file_id, user_id).await?;
     Ok(HttpResponse::Ok().json(file_metadata))
 }
 
