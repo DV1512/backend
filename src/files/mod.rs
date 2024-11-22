@@ -15,11 +15,10 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use surrealdb::Surreal;
 
-// TODO: Replace with environment variable
-const UPLOAD_DIRECTORY: &str = "/Users/gustav/uploads/";
-
 fn get_file_upload_path(filename: &dyn ToString) -> PathBuf {
-    let upload_path = std::path::PathBuf::from(UPLOAD_DIRECTORY);
+    let upload_directory = tosic_utils::prelude::env!("FILES_UPLOAD_PATH", "/tmp/file_uploads");
+    tracing::info!("Using upload directory: '{upload_directory}'");
+    let upload_path = std::path::PathBuf::from(upload_directory);
     upload_path.join(filename.to_string())
 }
 
