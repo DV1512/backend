@@ -12,25 +12,10 @@ use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::sync::Arc;
-use surrealdb::sql::thing;
-use surrealdb::RecordId;
 use surrealdb::Surreal;
 
 // TODO: Replace with environment variable
 const UPLOAD_DIRECTORY: &str = "/Users/gustav/uploads/";
-
-#[derive(Serialize)]
-struct Content {
-    filename: String,
-}
-
-#[derive(Serialize, Deserialize)]
-struct FileUserRelation {
-    #[serde(rename = "in")]
-    file: RecordId,
-    #[serde(rename = "out")]
-    user: RecordId,
-}
 
 async fn insert<T>(
     db: &Arc<Surreal<T>>,
