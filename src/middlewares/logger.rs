@@ -2,16 +2,20 @@ use crate::middlewares::auth::AuthType;
 use crate::utils::middleware::define_middleware;
 use actix_web::http::{Method, StatusCode};
 use actix_web::{dev::ServiceRequest, HttpMessage};
+use serde::{Deserialize, Serialize};
+use surrealdb::sql::Datetime;
 use tokio::sync::mpsc::Sender;
+use tosic_utils::wrap_external_type;
 use tracing::error;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub struct LogEntry {
-    pub method: Method,
+    pub method: String,
     pub path: String,
     pub user: Option<AuthType>,
-    pub status: StatusCode,
+    pub status: u16,
+    pub date: Datetime
 }
 
 define_middleware! {
@@ -36,10 +40,11 @@ define_middleware! {
 
             // Create the log entry
             let log_entry = LogEntry {
-                method,
+                method: method.to_string(),
                 path,
                 user,
-                status,
+                status: status.as_u16(),
+                date: Datetime::default(),
             };
 
             // Send the log entry into the channel
