@@ -74,22 +74,32 @@ async fn get_all_by_token<T>(
 where
     T: surrealdb::Connection,
 {
-    let user = get_user_by_token(&db, &token).await?;
+    let user = get_user_by_token(db, &token).await?;
     let user_id = user.id.ok_or(ServerResponseError::NotFound)?;
     const SQL: &str = "SELECT VALUE in FROM files_for WHERE out = $USER FETCH in;";
     let files: Vec<FileMetadata> = db.query(SQL).bind(("USER", user_id)).await?.take(0)?;
     Ok(files)
 }
 
-async fn delete<T>(db: &Arc<Surreal<T>>, id: String) -> Result<(), ServerResponseError>
+/// Deletes a file metadata record with a supplied ID that
+/// was uploaded by the user with corresponding token.
+async fn delete<T>(
+    db: &Arc<Surreal<T>>,
+    file_id: String,
+    token: String,
+) -> Result<(), ServerResponseError>
 where
     T: surrealdb::Connection,
 {
-    let deleted: Option<FileMetadata> = db.delete(("file", id)).await?;
-    match deleted {
-        Some(_) => Ok(()),
-        None => Err(ServerResponseError::NotFound),
-    }
+    let user = get_user_by_token(db, &token).await?;
+    let user_id = user.id.ok_or(ServerResponseError::NotFound)?;
+    const SQL: &str =
+        "DELETE file WHERE meta::id(id) = $FILE AND ->files_for->user.id CONTAINS $USER;";
+    db.query(SQL)
+        .bind(("FILE", file_id))
+        .bind(("USER", user_id))
+        .await?;
+    Ok(())
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -151,15 +161,18 @@ async fn get_file(
 
 #[delete("/{file_id}")]
 async fn delete_file(
+    file_id: web::Path<String>,
+    auth: AuthenticatedToken,
     state: web::Data<AppState>,
-    id: web::Path<String>,
 ) -> Result<impl Responder, ServerResponseError> {
-    let id = id.into_inner();
-    let upload_path = std::path::PathBuf::from(UPLOAD_DIRECTORY);
-    let file_path = upload_path.join(&id);
-    fs::remove_file(&file_path).map_err(|e| ServerResponseError::InternalError(e.to_string()))?;
+    let file_id = file_id.into_inner();
 
-    delete(&state.db, id.clone()).await?;
+    let token = auth.get_token();
+    delete(&state.db, file_id.clone(), token).await?;
+
+    let upload_path = std::path::PathBuf::from(UPLOAD_DIRECTORY);
+    let file_path = upload_path.join(&file_id);
+    fs::remove_file(&file_path).map_err(|e| ServerResponseError::InternalError(e.to_string()))?;
 
     Ok(HttpResponse::Ok().finish())
 }
