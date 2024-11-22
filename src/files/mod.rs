@@ -187,10 +187,29 @@ async fn list_files(
     Ok(HttpResponse::Ok().json(files))
 }
 
+#[get("/{file_id}/content")]
+async fn download_file(
+    file_id: web::Path<String>,
+    auth: AuthenticatedToken,
+    state: web::Data<AppState>,
+) -> Result<impl Responder, ServerResponseError> {
+    let token = auth.get_token();
+    let user = get_user_by_token(&state.db, &token).await?;
+    let user_id = user.id.ok_or(ServerResponseError::NotFound)?;
+    let metadata = get(&state.db, file_id.into_inner(), user_id).await?;
+    let upload_path = std::path::PathBuf::from(UPLOAD_DIRECTORY);
+    let file_path = upload_path.join(&metadata.id.id.to_string());
+    let file = actix_files::NamedFile::open_async(file_path)
+        .await
+        .map_err(|_| ServerResponseError::NotFound)?;
+    Ok(file)
+}
+
 pub fn files_service() -> impl HttpServiceFactory {
     web::scope("/files")
         .service(upload_file)
         .service(get_file)
         .service(delete_file)
         .service(list_files)
+        .service(download_file)
 }

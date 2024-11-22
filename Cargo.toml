@@ -74,6 +74,7 @@ mime = "0.3.17"
 serde_urlencoded = "0.7.1"
 actix-web-httpauth = "0.8.2"
 actix-multipart = { version = "0.7.2", default-features = false, features = ["derive", "tempfile"] }
+actix-files = { version = "0.6.6", default-features = false, features = ["tokio-uring"] }
 
 [features]
 default = ["local"]
