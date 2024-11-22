@@ -65,6 +65,22 @@ where
     }
 }
 
+/// Returns metadata of all files uploaded by the user
+/// corresponding to the supplied token.
+async fn get_all_by_token<T>(
+    db: &Arc<Surreal<T>>,
+    token: String,
+) -> Result<Vec<FileMetadata>, ServerResponseError>
+where
+    T: surrealdb::Connection,
+{
+    let user = get_user_by_token(&db, &token).await?;
+    let user_id = user.id.ok_or(ServerResponseError::NotFound)?;
+    const SQL: &str = "SELECT VALUE in FROM files_for WHERE out = $USER FETCH in;";
+    let files: Vec<FileMetadata> = db.query(SQL).bind(("USER", user_id)).await?.take(0)?;
+    Ok(files)
+}
+
 async fn delete<T>(db: &Arc<Surreal<T>>, id: String) -> Result<(), ServerResponseError>
 where
     T: surrealdb::Connection,
@@ -149,9 +165,13 @@ async fn delete_file(
 }
 
 #[get("")]
-async fn list_files(state: web::Data<AppState>) -> Result<impl Responder, ServerResponseError> {
-    let res: Vec<FileMetadata> = state.db.select("file").await?;
-    Ok(HttpResponse::Ok().json(res))
+async fn list_files(
+    auth: AuthenticatedToken,
+    state: web::Data<AppState>,
+) -> Result<impl Responder, ServerResponseError> {
+    let token = auth.get_token();
+    let files = get_all_by_token(&state.db, token).await?;
+    Ok(HttpResponse::Ok().json(files))
 }
 
 pub fn files_service() -> impl HttpServiceFactory {
