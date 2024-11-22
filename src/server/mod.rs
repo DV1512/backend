@@ -13,8 +13,11 @@ pub use background_logger::*;
 pub async fn setup() -> Result<(), ServerError> {
     init_env()?;
 
-    init_tracing()?;
-    info!("Logging initialized");
+    #[cfg(not(test))]
+    {
+        init_tracing()?;
+        info!("Logging initialized");
+    }
 
     init_internal_db().await?;
 

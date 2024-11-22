@@ -1,4 +1,5 @@
 mod get;
+mod test;
 
 use crate::auth::UserInfo;
 use crate::auth::Role;

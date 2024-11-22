@@ -37,3 +37,4 @@ generate_endpoint! {
         Ok(web::Json(user))
     }
 }
+
