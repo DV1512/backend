@@ -40,7 +40,6 @@ async fn logger(mut receiver: Receiver<LogEntry>) {
                 info!("{}, No Auth present for this request", log);
             }
         }*/
-        warn!("Logging to db");
 
         let _: Option<LogEntry> = db.create("log").content(log).await.expect("Unable to insert log");
     }
