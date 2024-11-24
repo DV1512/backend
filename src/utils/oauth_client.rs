@@ -90,7 +90,7 @@ macro_rules! define_oauth_client {
                 let record = match db_user {
                     None => {
                         let new_user_record = crate::services::user::create::create_user(db, user.clone()).await?;
-                        crate::auth::create_auth_for_user(
+                        crate::services::auth_for::create_auth_for_user(
                             new_user_record.clone(),
                             vec![self.details.clone().into()],
                             None,

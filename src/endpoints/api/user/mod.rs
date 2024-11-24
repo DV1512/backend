@@ -1,7 +1,7 @@
 pub mod get;
 pub mod update;
 
-use crate::auth::Role;
+use crate::models::Role;
 use crate::endpoints::user::get::*;
 use crate::endpoints::user::update::*;
 use crate::extractors::Authenticated;

@@ -1,11 +1,9 @@
 use crate::middlewares::auth::AuthType;
 use crate::utils::middleware::define_middleware;
-use actix_web::http::{Method, StatusCode};
 use actix_web::{dev::ServiceRequest, HttpMessage};
 use serde::{Deserialize, Serialize};
 use surrealdb::sql::Datetime;
 use tokio::sync::mpsc::Sender;
-use tosic_utils::wrap_external_type;
 use tracing::error;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

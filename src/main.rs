@@ -3,7 +3,6 @@
 
 use crate::server::{server, setup};
 use crate::server_error::ServerError;
-use crate::state::AppState;
 use helper_macros::generate_endpoint;
 
 mod auth;

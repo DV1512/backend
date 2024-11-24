@@ -1,7 +1,5 @@
-use crate::middlewares::auth::AuthType;
 use crate::middlewares::logger::LogEntry;
 use crate::state::db;
-use surrealdb::sql::Thing;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::{Receiver, Sender};
 

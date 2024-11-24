@@ -1,8 +1,6 @@
 use crate::dto::UserInfoDTO;
 use crate::error::ServerResponseError;
 use crate::models::user_info::UserInfo;
-use crate::services::user::utils::get_user_by_token;
-use crate::AppState;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -118,5 +116,26 @@ impl IntoParams for GetUserBy {
         );
 
         params
+    }
+}
+
+#[tracing::instrument(skip(db))]
+pub(crate) async fn get_user_by_token<T>(db: &Arc<Surreal<T>>, token: &str) -> Result<UserInfo>
+where
+    T: surrealdb::Connection,
+{
+    let query = Select::query("session")
+        .add_field("user_id.*", Some("user"))
+        .add_field("*", None)
+        .add_condition("access_token", None, token)
+        .set_limit(1);
+
+    let user: Option<UserInfo> = query.run(db, "user").await?;
+
+    if let Some(user) = user {
+        Ok(user)
+    } else {
+        warn!("User was not found");
+        Err(anyhow::anyhow!("User not found"))
     }
 }

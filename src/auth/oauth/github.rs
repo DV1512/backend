@@ -1,15 +1,10 @@
 use super::provider::github::GithubProvider;
 use super::scopes::github::{GithubScope, GithubScopes};
 use crate::auth::oauth::error::OauthError;
-use crate::auth::{Role, UserInfo};
-use crate::error::ServerResponseError;
+use crate::models::user_info::{UserInfo, Role};
 use crate::models::datetime::Datetime;
-use crate::state::AppState;
 use crate::utils::oauth_client::define_oauth_client;
-use actix_web::{web, HttpRequest, HttpResponse, Scope};
-use helper_macros::generate_endpoint;
 use serde::{Deserialize, Serialize};
-use tracing::{error, info};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 struct GithubUserInfo {

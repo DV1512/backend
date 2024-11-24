@@ -2,18 +2,11 @@ use crate::auth::oauth::error::OauthError;
 use crate::auth::oauth::provider::google::GoogleProvider;
 use crate::auth::oauth::scopes::google::{GoogleScope, GoogleScopes};
 
-use crate::auth::{Role, UserInfo};
-use crate::error::ServerResponseError;
+use crate::models::user_info::{UserInfo, Role};
 use crate::models::datetime::Datetime;
 use crate::utils::oauth_client::define_oauth_client;
-use crate::AppState;
-use actix_identity::Identity;
-use actix_web::cookie::Cookie;
-use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Scope};
 use anyhow::Result;
-use helper_macros::generate_endpoint;
 use serde::{Deserialize, Serialize};
-use tracing::{error, info};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct GoogleUserInfo {
