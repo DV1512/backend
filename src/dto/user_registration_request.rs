@@ -1,6 +1,6 @@
+use crate::models::user_info::UserInfo;
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
-use crate::models::user_info::UserInfo;
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct UserCreationRequest {

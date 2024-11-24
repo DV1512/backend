@@ -1,9 +1,9 @@
-use actix_web::{web, HttpRequest, HttpResponse};
-use tracing::{error, info};
-use helper_macros::generate_endpoint;
 use crate::dto::OAuthCallbackQuery;
 use crate::error::ServerResponseError;
 use crate::state::AppState;
+use actix_web::{web, HttpRequest, HttpResponse};
+use helper_macros::generate_endpoint;
+use tracing::{error, info};
 
 generate_endpoint! {
     fn callback;

@@ -12,6 +12,8 @@ mod endpoints;
 mod error;
 mod extractors;
 mod init_env;
+
+#[cfg(not(test))]
 mod logging;
 mod middlewares;
 mod models;

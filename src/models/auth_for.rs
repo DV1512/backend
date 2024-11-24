@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
 use crate::models::datetime::Datetime;
 use crate::models::thing::Thing;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, PartialOrd, Eq, PartialEq, Clone)]
 pub struct AuthForRelation {

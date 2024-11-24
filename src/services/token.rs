@@ -1,8 +1,8 @@
-use std::sync::Arc;
+use crate::error::ServerResponseError;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use surrealdb::sql::Thing;
 use surrealdb::Surreal;
-use crate::error::ServerResponseError;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub(crate) struct AuthenticatedUser {

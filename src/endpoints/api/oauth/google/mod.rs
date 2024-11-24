@@ -13,7 +13,5 @@ pub fn google_oauth_service() -> Scope {
 }
 
 #[derive(OpenApi)]
-#[openapi(
-    paths(google_login, google_callback)
-)]
+#[openapi(paths(google_login, google_callback))]
 pub(crate) struct GoogleApi;

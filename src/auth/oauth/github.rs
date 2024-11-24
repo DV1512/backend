@@ -1,8 +1,8 @@
 use super::provider::github::GithubProvider;
 use super::scopes::github::{GithubScope, GithubScopes};
 use crate::auth::oauth::error::OauthError;
-use crate::models::user_info::{UserInfo, Role};
 use crate::models::datetime::Datetime;
+use crate::models::user_info::{Role, UserInfo};
 use crate::utils::oauth_client::define_oauth_client;
 use serde::{Deserialize, Serialize};
 

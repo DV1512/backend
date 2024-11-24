@@ -66,4 +66,3 @@ pub(crate) struct Users {
     #[serde(flatten)]
     pub(crate) pagination: PaginationResponse,
 }
-

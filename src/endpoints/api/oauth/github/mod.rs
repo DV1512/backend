@@ -7,13 +7,9 @@ pub(crate) mod login;
 pub(crate) use self::{callback::*, login::*};
 
 pub fn github_oauth_service() -> Scope {
-    web::scope("/github")
-        .service(login)
-        .service(callback)
+    web::scope("/github").service(login).service(callback)
 }
 
 #[derive(OpenApi)]
-#[openapi(
-    paths(login, callback)
-)]
+#[openapi(paths(login, callback))]
 pub(crate) struct GithubApi;

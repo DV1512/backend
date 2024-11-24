@@ -1,4 +1,3 @@
-use tracing::info;
 
 pub mod background_logger;
 pub mod db;
@@ -6,9 +5,17 @@ pub mod migrations_runner;
 pub mod rate_limiter;
 pub(crate) mod test;
 
+#[cfg(not(test))]
+use tracing::info;
 pub use migrations_runner::*;
 
 pub use background_logger::*;
+use crate::init_env::init_env;
+use crate::server_error::ServerError;
+use db::init_internal_db;
+#[cfg(not(test))]
+use crate::logging::init_tracing;
+
 
 pub async fn setup() -> Result<(), ServerError> {
     init_env()?;
@@ -44,6 +51,7 @@ macro_rules! app {
             )
     };
 }
+pub(crate) use app;
 
 /// A macro for creating the actix web server. this can be used in a `main` function or in tests to setup the basic configuration of the server, it does not start the server!
 macro_rules! server {
@@ -85,9 +93,5 @@ macro_rules! server {
         })
     }};
 }
-use crate::init_env::init_env;
-use crate::logging::init_tracing;
-use crate::server_error::ServerError;
-pub(crate) use app;
-use db::init_internal_db;
 pub(crate) use server;
+

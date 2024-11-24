@@ -1,8 +1,8 @@
-use std::sync::Arc;
-use surrealdb::Surreal;
 use crate::dto::user_update_request::UserUpdateRequest;
 use crate::error::ServerResponseError;
 use crate::models::thing::Thing;
+use std::sync::Arc;
+use surrealdb::Surreal;
 
 pub async fn update_user_data<T>(
     db: &Arc<Surreal<T>>,

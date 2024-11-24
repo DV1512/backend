@@ -2,8 +2,8 @@ use crate::auth::oauth::error::OauthError;
 use crate::auth::oauth::provider::google::GoogleProvider;
 use crate::auth::oauth::scopes::google::{GoogleScope, GoogleScopes};
 
-use crate::models::user_info::{UserInfo, Role};
 use crate::models::datetime::Datetime;
+use crate::models::user_info::{Role, UserInfo};
 use crate::utils::oauth_client::define_oauth_client;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};

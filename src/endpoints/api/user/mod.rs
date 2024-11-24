@@ -1,12 +1,12 @@
 pub mod get;
 pub mod update;
 
-use crate::models::Role;
 use crate::endpoints::user::get::*;
 use crate::endpoints::user::update::*;
 use crate::extractors::Authenticated;
 use crate::models::user_info::UserInfo;
 use crate::models::user_info::UserInfoExampleResponses;
+use crate::models::Role;
 use crate::services::user::get::{get_user_by_internal, GetUserBy};
 use crate::state::AppState;
 use actix_web::guard::Acceptable;

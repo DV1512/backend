@@ -1,8 +1,8 @@
-use anyhow::bail;
 use crate::auth::oauth::provider::{OauthProvider, OauthProviderName};
 use crate::models::auth_for::AuthForRelation;
 use crate::models::Record;
 use crate::server::db::INTERNAL_DB;
+use anyhow::bail;
 
 #[tracing::instrument(skip(password))]
 pub(crate) async fn create_auth_for_user(

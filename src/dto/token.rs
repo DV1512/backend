@@ -1,11 +1,11 @@
+use crate::models::access_token::AccessToken;
+use crate::models::refresh_token::RefreshToken;
 use rand::distributions::{Alphanumeric, DistString};
 use rand::thread_rng;
 use serde::{Deserialize, Serialize};
-use utoipa::{IntoParams, ToResponse, ToSchema};
 use utoipa::openapi::path::{Parameter, ParameterBuilder, ParameterIn};
 use utoipa::openapi::{KnownFormat, Object, ObjectBuilder, Required, SchemaFormat, Type};
-use crate::models::access_token::AccessToken;
-use crate::models::refresh_token::RefreshToken;
+use utoipa::{IntoParams, ToResponse, ToSchema};
 
 #[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(tag = "grant_type", rename_all = "snake_case")]

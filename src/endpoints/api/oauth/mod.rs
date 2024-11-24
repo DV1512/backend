@@ -1,5 +1,5 @@
-use actix_web::{web, Scope};
 use actix_web::guard::Acceptable;
+use actix_web::{web, Scope};
 use utoipa::OpenApi;
 
 pub(crate) mod github;
@@ -9,7 +9,6 @@ pub(crate) mod revoke;
 pub(crate) mod token;
 
 pub(crate) use {github::*, google::*, register::*, revoke::*, token::*};
-
 
 pub fn oauth_service() -> Scope {
     web::scope("/oauth")

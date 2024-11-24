@@ -1,7 +1,7 @@
-use actix_web::{web, HttpResponse};
-use tracing::info;
-use helper_macros::generate_endpoint;
 use crate::state::AppState;
+use actix_web::{web, HttpResponse};
+use helper_macros::generate_endpoint;
+use tracing::info;
 
 generate_endpoint! {
     fn login;

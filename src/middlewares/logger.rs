@@ -13,7 +13,7 @@ pub struct LogEntry {
     pub path: String,
     pub user: Option<AuthType>,
     pub status: u16,
-    pub date: Datetime
+    pub date: Datetime,
 }
 
 define_middleware! {
