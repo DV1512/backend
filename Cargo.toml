@@ -73,6 +73,7 @@ rand = { version = "0.8.5", default-features = false }
 mime = "0.3.17"
 serde_urlencoded = "0.7.1"
 actix-web-httpauth = "0.8.2"
+awc = "3.5.1"
 
 [features]
 default = ["local"]

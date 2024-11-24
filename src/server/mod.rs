@@ -40,6 +40,7 @@ macro_rules! app {
             //.wrap(AuthMiddleware) // proof of concept, this should be moved into each individual service we want to secure with auth
             .external_resource("frontend", $frontend_url.clone())
             .external_resource("base_url", $base_url.clone())
+            .external_resource("llm", tosic_utils::prelude::env!("LLM_BACKEND", "http://localhost:8000"))
             .service(crate::endpoints::index_scope($limiter, $logger))
             .wrap($cors)
             .wrap($identity)
