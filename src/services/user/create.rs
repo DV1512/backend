@@ -1,6 +1,6 @@
-use crate::auth::UserInfo;
-use crate::Record;
-use crate::{auth::oauth::register::UserRegistrationRequest, error::ServerResponseError};
+use crate::models::user_info::UserInfo;
+use crate::models::Record;
+use crate::{dto::UserRegistrationRequest, error::ServerResponseError};
 use anyhow::{bail, Result};
 use std::sync::Arc;
 use surrealdb::Surreal;

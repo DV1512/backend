@@ -1,4 +1,4 @@
-use crate::__path_health_check;
+use crate::endpoints::__path_health;
 use crate::models::{datetime::Datetime, thing::Thing};
 use std::collections::BTreeMap;
 use utoipa::{Modify, OpenApi};
@@ -83,8 +83,8 @@ impl Modify for OpenApiSecurityConfig {
 #[derive(OpenApi)]
 #[openapi(
     nest(
-        (path = "/user", api = crate::auth::users::UserApi),
-        (path = "/oauth", api = crate::auth::oauth::OauthApi),
+        (path = "/user", api = crate::endpoints::api::user::UserApi),
+        (path = "/oauth", api = crate::endpoints::api::oauth::OauthApi),
     ),
     components(schemas(Datetime, Thing), responses()),
     tags(
@@ -97,7 +97,7 @@ pub struct DocsV1;
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(health_check),
+    paths(health),
     nest(
         (path = "/", api = DocsV1),
     ),

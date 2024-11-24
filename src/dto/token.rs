@@ -1,26 +1,11 @@
-use crate::auth::session::UserSession;
-use crate::error::ServerResponseError;
-use crate::models::{access_token::AccessToken, refresh_token::RefreshToken};
-use crate::state::AppState;
-use actix_identity::Identity;
-use actix_web::http::header::CacheDirective;
-use actix_web::{http::header, web, HttpMessage, HttpRequest, HttpResponse};
-use helper_macros::generate_endpoint;
-use rand::{
-    distributions::{Alphanumeric, DistString},
-    thread_rng,
-};
+use crate::models::access_token::AccessToken;
+use crate::models::refresh_token::RefreshToken;
+use rand::distributions::{Alphanumeric, DistString};
+use rand::thread_rng;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
-use surrealdb::sql::Thing;
-use surrealdb::Surreal;
-use tracing::info;
 use utoipa::openapi::path::{Parameter, ParameterBuilder, ParameterIn};
-use utoipa::openapi::schema::Type;
-use utoipa::openapi::{KnownFormat, Required};
-use utoipa::openapi::{Object, ObjectBuilder, SchemaFormat};
-use utoipa::IntoParams;
-use utoipa::{ToResponse, ToSchema};
+use utoipa::openapi::{KnownFormat, Object, ObjectBuilder, Required, SchemaFormat, Type};
+use utoipa::{IntoParams, ToResponse, ToSchema};
 
 #[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(tag = "grant_type", rename_all = "snake_case")]
@@ -85,8 +70,8 @@ impl IntoParams for TokenRequest {
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub(crate) struct TokenResponse {
-    access_token: AccessToken,
-    refresh_token: RefreshToken,
+    pub(crate) access_token: AccessToken,
+    pub(crate) refresh_token: RefreshToken,
     token_type: TokenType,
     expires_in: usize,
 }
@@ -119,96 +104,12 @@ fn random_string(length: usize) -> String {
 }
 
 impl TokenResponse {
-    fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             access_token: AccessToken::new(random_string(50)),
             refresh_token: RefreshToken::new(random_string(50)),
             token_type: TokenType::default(),
             expires_in: 3600,
-        }
-    }
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-struct AuthenticatedUser {
-    email: String,
-    id: Thing,
-    username: String,
-}
-
-/// Validates a given username and password,
-/// returning ``Ok(AuthenticatedUser)`` for valid credentials
-/// and ``Err(ServerResponse::UnauthorizedWithMessage)``
-/// otherwise.
-async fn validate_user<T>(
-    username: String,
-    password: String,
-    db: &Arc<Surreal<T>>,
-) -> Result<AuthenticatedUser, ServerResponseError>
-where
-    T: surrealdb::Connection,
-{
-    let password: surrealdb::sql::Value = password.into();
-    let query = format!(
-        "SELECT * FROM user
-        WHERE email = $email
-        AND array::any(
-            <-auth_for<-user_auth, |$a|
-            type::is::string($a.password) AND
-            crypto::argon2::compare($a.password, {})
-        )
-        FETCH auth;",
-        password
-    );
-    info!("DB query: {query}");
-
-    let query_result: Option<AuthenticatedUser> =
-        db.query(query).bind(("email", username)).await?.take(0)?;
-    info!("Query result: {:?}", &query_result);
-
-    query_result.ok_or(ServerResponseError::UnauthorizedWithMessage(
-        "Invalid username or password".to_string(),
-    ))
-}
-
-generate_endpoint! {
-    fn token;
-    method: post;
-    path: "/token";
-    docs: {
-        tag: "oauth",
-        responses: {
-            (status = 200, response = TokenResponseExample),
-            (status = 404, description = "User not found or invalid credentials"),
-            (status = 501, description = "Refresh token grant type is not implemented yet")
-        }
-    }
-    params: {
-        req: HttpRequest,
-        state: web::Data<AppState>,
-        data: web::Form<TokenRequest>,
-    };
-    {
-        info!("Requesting access token");
-        let db = state.db.clone();
-        match data.0 {
-            TokenRequest::RefreshToken { refresh_token: _ } => Err(ServerResponseError::NotImplementedWithMessage("Refreshing tokens not yet supported".to_string())),
-            TokenRequest::Password { username, password } => {
-                let user = validate_user(username, password, &db).await?;
-                let response = TokenResponse::new();
-                let token = response.access_token.secret().to_string();
-
-                let session = UserSession::new(token.clone(), Some(response.refresh_token.secret().to_string()), user.email, user.id);
-                Identity::login(&req.extensions(), token).unwrap();
-                session.create().await?;
-
-                Ok(HttpResponse::Ok()
-                    .insert_header(header::CacheControl(vec![
-                        CacheDirective::NoCache,
-                        CacheDirective::NoStore,
-                    ]))
-                    .json(response))
-            }
         }
     }
 }

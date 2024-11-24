@@ -1,4 +1,4 @@
-use crate::auth::session::UserSession;
+use crate::models::session::UserSession;
 use actix_identity::Identity;
 use actix_web::{dev::Payload, error::ErrorUnauthorized, Either, FromRequest, HttpRequest, Result};
 use actix_web_httpauth::extractors::bearer::BearerAuth;

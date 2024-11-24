@@ -1,21 +1,11 @@
-use crate::auth::session::UserSession;
-use crate::error::ServerResponseError;
-use crate::generate_endpoint;
+use crate::models::session::UserSession;
 use actix_web::HttpResponse;
-use tracing::info;
-
-pub async fn delete_session(session: UserSession) -> Result<(), ServerResponseError> {
-    session.delete().await?;
-
-    info!("Session deleted successfully");
-
-    Ok(())
-}
+use helper_macros::generate_endpoint;
 
 generate_endpoint! {
-    fn logout;
+    fn revoke;
     method: get;
-    path: "/logout";
+    path: "/revoke";
     docs: {
         tag: "oauth",
         responses: {
@@ -33,7 +23,7 @@ generate_endpoint! {
         session: UserSession
     };
     {
-        delete_session(session).await?;
+        session.delete().await?;
 
         Ok(HttpResponse::Ok().finish())
     }

@@ -1,5 +1,5 @@
-use crate::auth::{Role, UserInfo};
 use crate::models::datetime::Datetime;
+use crate::models::user_info::{Role, UserInfo};
 use crate::utils::create_dto::create_dto;
 
 create_dto! {

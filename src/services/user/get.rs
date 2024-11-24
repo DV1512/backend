@@ -1,13 +1,7 @@
-pub(crate) mod utils;
-
-use crate::auth::users::get::utils::get_user_by_token;
-use crate::auth::UserInfo;
 use crate::dto::UserInfoDTO;
-use crate::extractors::Authenticated;
-use crate::AppState;
-use actix_web::web;
+use crate::error::ServerResponseError;
+use crate::models::user_info::UserInfo;
 use anyhow::Result;
-use helper_macros::generate_endpoint;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use surrealdb::Surreal;
@@ -125,37 +119,23 @@ impl IntoParams for GetUserBy {
     }
 }
 
-use crate::auth::UserInfoExampleResponses;
-use crate::error::ServerResponseError;
+#[tracing::instrument(skip(db))]
+pub(crate) async fn get_user_by_token<T>(db: &Arc<Surreal<T>>, token: &str) -> Result<UserInfo>
+where
+    T: surrealdb::Connection,
+{
+    let query = Select::query("session")
+        .add_field("user_id.*", Some("user"))
+        .add_field("*", None)
+        .add_condition("access_token", None, token)
+        .set_limit(1);
 
-generate_endpoint! {
-    fn get_user_by;
-    method: get;
-    path: "";
-    docs: {
-        params: (GetUserBy),
-        tag: "user",
-        responses: {
-            (status = 200, response = UserInfoExampleResponses),
-            (status = 401, description = "Invalid credentials"),
-            (status = 404, description = "User not found"),
-        },
-        security: [
-            ("bearer_token" = []),
-            ("cookie_session" = []),
-        ]
-    }
-    params: {
-        _auth: Authenticated,
-        state: web::Data<AppState>,
-        data: web::Query<GetUserBy>,
-    };
-    {
-        info!("Retrieving user");
-        let data = data.into_inner();
-        let db = &state.db;
-        let user = get_user_by_internal(db, &data).await?;
+    let user: Option<UserInfo> = query.run(db, "user").await?;
 
-        Ok(web::Json(user))
+    if let Some(user) = user {
+        Ok(user)
+    } else {
+        warn!("User was not found");
+        Err(anyhow::anyhow!("User not found"))
     }
 }

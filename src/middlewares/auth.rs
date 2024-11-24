@@ -1,7 +1,8 @@
 use crate::utils::middleware::define_middleware;
 use actix_web::{dev::ServiceRequest, HttpMessage};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AuthType {
     ApiKey(String),
     AccessToken(String),
