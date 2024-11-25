@@ -10,15 +10,13 @@ use crate::error::ServerResponseError;
 
 async fn proxy(path: &str, req: HttpRequest, bytes: Bytes) -> impl Responder {
     let client = Client::default();
-    let url = format!("http://localhost:8000{}", path);
+    let url = format!("{}{}", req.url_for_static("llm").expect("LLM URL not set"), path);
 
     let req = client.request_from(url, req.head()).timeout(Duration::from_mins(20));
-    debug!("constructed request");
 
     let mut resp;
 
     if !bytes.is_empty() {
-        debug!("Sending body");
         resp = req.send_body(bytes);
     } else {
         resp = req.send();
@@ -66,6 +64,6 @@ generate_endpoint! {
     };
     {
         debug!("Received chat request");
-        Ok(proxy("/chat/structured", req, body).await)
+        Ok(proxy("chat/structured", req, body).await)
     }
 }
