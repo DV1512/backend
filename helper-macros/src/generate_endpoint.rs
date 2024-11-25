@@ -34,7 +34,7 @@ use syn::{
 pub(crate) fn generate_endpoint_internal(input: TokenStream) -> TokenStream1 {
     let input: TokenStream1 = input.into();
 
-    let input = parse_macro_input!(input as GenerateEndpointInput).into();
+    let input = parse_macro_input!(input as GenerateEndpointInput);
 
     let GenerateEndpointInput {
         attrs,
@@ -221,13 +221,13 @@ pub(crate) struct SecurityRequirement {
 
 impl Parse for SecurityRequirement {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let name;
+        
         let mut scopes = Vec::new();
 
         let content;
         parenthesized!(content in input);
 
-        name = content.parse().ok();
+        let name = content.parse().ok();
 
         if let Some(_name) = &name {
             content.parse::<Token![=]>()?;
