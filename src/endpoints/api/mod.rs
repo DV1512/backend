@@ -15,9 +15,13 @@ use utoipa_redoc::{Redoc, Servable};
 use utoipa_scalar::{Scalar, Servable as OtherServable};
 use utoipa_swagger_ui::{Config, SwaggerUi};
 
+use files::files_service;
+
+pub(crate) mod files;
 pub(crate) mod oauth;
 pub(crate) mod user;
 
+pub(crate) use files::*;
 pub(crate) use oauth::*;
 pub(crate) use user::*;
 
@@ -34,6 +38,7 @@ fn v1_endpoints(
         .wrap(TracingLogger::default()) // this is logging using tracing
         .service(user_service())
         .service(oauth_service())
+        .service(files_service())
         .wrap(limiter)
         .wrap(logger) // this is database logging
         .wrap(NormalizePath::default())
