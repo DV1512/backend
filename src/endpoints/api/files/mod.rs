@@ -2,6 +2,7 @@ use crate::error::ServerResponseError;
 use crate::extractors::AuthenticatedToken;
 use crate::extractors::IntoSession;
 use crate::models::datetime::Datetime;
+use crate::models::file_metadata::FileMetadata;
 use crate::models::thing::Thing;
 use crate::services::user::get::get_user_by_token;
 use crate::state::AppState;
@@ -120,19 +121,6 @@ where
         .bind(("USER", user_id))
         .await?;
     Ok(())
-}
-
-/// A type representing the metadata of an uploaded file.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct FileMetadata {
-    id: Thing,
-    /// The original filename of the uploaded file.
-    /// For security reasons, uploaded files are
-    /// persisted to disk with a filename equal
-    /// to its database record ID.
-    filename: String,
-    /// The datetime when the file was uploaded.
-    created_at: Datetime,
 }
 
 #[derive(Debug, MultipartForm)]
