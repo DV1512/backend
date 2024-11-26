@@ -88,7 +88,7 @@ async fn upload_file(
         "Uploaded file had no filename".to_string(),
     ))?;
     let token = token_from_request(&state.db, &req).await?;
-    let metadata = insert(&state.db, filename, token).await?;
+    let metadata = insert_file_metadata(&state.db, filename, token).await?;
     let file_path = get_file_upload_path(&metadata.id.id);
     form.file
         .file
@@ -105,7 +105,7 @@ async fn get_file(
 ) -> Result<impl Responder, ServerResponseError> {
     let file_id = file_id.into_inner();
     let token = auth.get_token();
-    let file_metadata = get(&state.db, file_id, token).await?;
+    let file_metadata = get_file_metadata(&state.db, file_id, token).await?;
     Ok(HttpResponse::Ok().json(file_metadata))
 }
 
@@ -117,7 +117,7 @@ async fn delete_file(
 ) -> Result<impl Responder, ServerResponseError> {
     let file_id = file_id.into_inner();
     let token = auth.get_token();
-    delete(&state.db, file_id.clone(), token).await?;
+    delete_file_metadata(&state.db, file_id.clone(), token).await?;
     let file_path = get_file_upload_path(&file_id);
     fs::remove_file(&file_path).map_err(|e| ServerResponseError::InternalError(e.to_string()))?;
     Ok(HttpResponse::Ok().finish())
@@ -129,7 +129,7 @@ async fn list_files(
     state: web::Data<AppState>,
 ) -> Result<impl Responder, ServerResponseError> {
     let token = auth.get_token();
-    let files = get_all_by_token(&state.db, token).await?;
+    let files = get_file_metadata_by_token(&state.db, token).await?;
     Ok(HttpResponse::Ok().json(files))
 }
 
@@ -140,7 +140,7 @@ async fn download_file(
     state: web::Data<AppState>,
 ) -> Result<impl Responder, ServerResponseError> {
     let token = auth.get_token();
-    let metadata = get(&state.db, file_id.into_inner(), token).await?;
+    let metadata = get_file_metadata(&state.db, file_id.into_inner(), token).await?;
     let file_path = get_file_upload_path(&metadata.id.id);
     let file = actix_files::NamedFile::open_async(file_path)
         .await

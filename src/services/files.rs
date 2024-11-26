@@ -6,7 +6,7 @@ use surrealdb::Surreal;
 
 /// Inserts metadata for a file with filename `filename` and relates it
 /// to the user holding token `token`.
-pub async fn insert<T>(
+pub async fn insert_file_metadata<T>(
     db: &Arc<Surreal<T>>,
     filename: String,
     token: String,
@@ -37,7 +37,7 @@ where
 
 /// Returns the metadata of the file with ID `file_id` uploaded by
 /// the user holding the token `token`.
-pub async fn get<T>(
+pub async fn get_file_metadata<T>(
     db: &Arc<Surreal<T>>,
     file_id: String,
     token: String,
@@ -63,7 +63,7 @@ where
 
 /// Returns metadata of all files uploaded by the user
 /// holding token `token`.
-pub async fn get_all_by_token<T>(
+pub async fn get_file_metadata_by_token<T>(
     db: &Arc<Surreal<T>>,
     token: String,
 ) -> Result<Vec<FileMetadata>, ServerResponseError>
@@ -79,7 +79,7 @@ where
 
 /// Deletes the metadata of a file with ID `file_id` that
 /// was uploaded by the user holding the token `token`.
-pub async fn delete<T>(
+pub async fn delete_file_metadata<T>(
     db: &Arc<Surreal<T>>,
     file_id: String,
     token: String,
