@@ -1,4 +1,5 @@
 use crate::auth::oauth::Oauth;
+use crate::endpoints::api::files::FilesServiceState;
 use crate::server::db::INTERNAL_DB;
 use crate::server_error::ServerError;
 use actix_web::web;
@@ -9,6 +10,7 @@ use surrealdb::Surreal;
 pub struct AppState {
     pub db: Arc<Surreal<Client>>,
     pub oauth: Arc<Oauth>,
+    pub files: FilesServiceState,
 }
 
 #[tracing::instrument]
@@ -64,5 +66,6 @@ pub async fn app_state() -> Result<web::Data<AppState>, ServerError> {
     Ok(web::Data::new(AppState {
         db: Arc::new(database),
         oauth: Arc::new(Oauth::new().await?),
+        files: FilesServiceState::new(),
     }))
 }

@@ -17,17 +17,26 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use surrealdb::Surreal;
 
+pub struct FilesServiceState {
+    pub upload_path: PathBuf,
+}
+
+impl FilesServiceState {
+    pub fn new() -> Self {
+        let env_upload_path = tosic_utils::prelude::env!("FILES_UPLOAD_PATH", "/tmp/file_uploads");
+        let upload_path = std::path::PathBuf::from(env_upload_path);
+        Self { upload_path }
+    }
+
+    pub fn get_path_for(&self, filename: &str) -> PathBuf {
+        self.upload_path.join(filename)
+    }
+}
+
 #[derive(Debug, MultipartForm)]
 struct UploadForm {
     #[multipart(limit = "100MB")]
     file: TempFile,
-}
-
-fn get_file_upload_path(filename: &dyn ToString) -> PathBuf {
-    let upload_directory = tosic_utils::prelude::env!("FILES_UPLOAD_PATH", "/tmp/file_uploads");
-    tracing::info!("Using upload directory: '{upload_directory}'");
-    let upload_path = std::path::PathBuf::from(upload_directory);
-    upload_path.join(filename.to_string())
 }
 
 async fn token_from_request<T>(
@@ -83,7 +92,7 @@ async fn upload_file(
     ))?;
     let token = token_from_request(&state.db, &req).await?;
     let metadata = insert_file_metadata(&state.db, filename, token).await?;
-    let file_path = get_file_upload_path(&metadata.id.id);
+    let file_path = state.files.get_path_for(&metadata.id.id.to_string());
     form.file
         .file
         .persist(file_path)
@@ -112,7 +121,7 @@ async fn delete_file(
     let file_id = file_id.into_inner();
     let token = auth.get_token();
     delete_file_metadata(&state.db, file_id.clone(), token).await?;
-    let file_path = get_file_upload_path(&file_id);
+    let file_path = state.files.get_path_for(&file_id);
     fs::remove_file(&file_path).map_err(|e| ServerResponseError::InternalError(e.to_string()))?;
     Ok(HttpResponse::Ok().finish())
 }
@@ -135,7 +144,7 @@ async fn download_file(
 ) -> Result<impl Responder, ServerResponseError> {
     let token = auth.get_token();
     let metadata = get_file_metadata(&state.db, file_id.into_inner(), token).await?;
-    let file_path = get_file_upload_path(&metadata.id.id);
+    let file_path = state.files.get_path_for(&metadata.id.id.to_string());
     let file = actix_files::NamedFile::open_async(file_path)
         .await
         .map_err(|_| ServerResponseError::NotFound)?;
