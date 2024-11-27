@@ -93,10 +93,9 @@ async fn upload_file(
     let token = token_from_request(&state.db, &req).await?;
     let metadata = insert_file_metadata(&state.db, filename, token).await?;
     let file_path = state.files.get_path_for(&metadata.id.id.to_string());
-    form.file
-        .file
-        .persist(file_path)
-        .map_err(|e| ServerResponseError::InternalError(e.to_string()))?;
+    if let Err(err) = form.file.file.persist(file_path) {
+        return Err(ServerResponseError::InternalError(err.to_string()));
+    }
     Ok(HttpResponse::Created().json(metadata))
 }
 
@@ -122,7 +121,9 @@ async fn delete_file(
     let token = auth.get_token();
     delete_file_metadata(&state.db, file_id.clone(), token).await?;
     let file_path = state.files.get_path_for(&file_id);
-    fs::remove_file(&file_path).map_err(|e| ServerResponseError::InternalError(e.to_string()))?;
+    if let Err(err) = fs::remove_file(&file_path) {
+        return Err(ServerResponseError::InternalError(err.to_string()));
+    }
     Ok(HttpResponse::Ok().finish())
 }
 
@@ -145,9 +146,9 @@ async fn download_file(
     let token = auth.get_token();
     let metadata = get_file_metadata(&state.db, file_id.into_inner(), token).await?;
     let file_path = state.files.get_path_for(&metadata.id.id.to_string());
-    let file = actix_files::NamedFile::open_async(file_path)
-        .await
-        .map_err(|_| ServerResponseError::NotFound)?;
+    let Ok(file) = actix_files::NamedFile::open_async(file_path).await else {
+        return Err(ServerResponseError::NotFound);
+    };
     Ok(file)
 }
 
