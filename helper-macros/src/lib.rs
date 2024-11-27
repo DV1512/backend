@@ -32,11 +32,11 @@ mod generate_endpoint;
 ///```
 ///
 pub fn generate_endpoint(input: TokenStream) -> TokenStream {
-    generate_endpoint_internal(input.into()).into()
+    generate_endpoint_internal(input.into())
 }
 
 #[proc_macro_error]
 #[proc_macro]
 pub fn generate_crud(input: TokenStream) -> TokenStream {
-    generate_crud_internal(input.into()).into()
+    generate_crud_internal(input.into())
 }

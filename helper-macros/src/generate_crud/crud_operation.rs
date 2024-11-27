@@ -251,7 +251,7 @@ impl CrudOperation {
             }
         };
 
-        TokenStream::from(tokens)
+        tokens
     }
 }
 
