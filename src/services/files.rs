@@ -1,38 +1,57 @@
 use crate::error::ServerResponseError;
 use crate::models::file_metadata::FileMetadata;
 use crate::services::user::get::get_user_by_token;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use surrealdb::Surreal;
 
-/// Inserts metadata for a file with filename `filename` and relates it
+#[derive(Debug, Serialize, Deserialize)]
+struct Filename {
+    filename: String,
+}
+
+impl Filename {
+    fn new(filename: &str) -> Self {
+        Self {
+            filename: filename.to_string(),
+        }
+    }
+}
+
+/// Inserts metadata for multiple files and relates them
 /// to the user holding token `token`.
 pub async fn insert_file_metadata<T>(
     db: &Arc<Surreal<T>>,
-    filename: String,
+    filenames: Vec<&str>,
     token: String,
-) -> Result<FileMetadata, ServerResponseError>
+) -> Result<Vec<FileMetadata>, ServerResponseError>
 where
     T: surrealdb::Connection,
 {
     let user = get_user_by_token(db, &token).await?;
     let user_id = user.id.ok_or(ServerResponseError::NotFound)?;
 
+    let files: Vec<Filename> = filenames
+        .iter()
+        .map(|filename| Filename::new(*filename))
+        .collect();
+
     const SQL: &str = "
         BEGIN TRANSACTION;
-        LET $FILE = (CREATE file SET filename = $FILENAME);
-        RELATE ($FILE) -> files_for -> ($USER);
+        LET $FILE_RECORDS = (INSERT INTO file $FILES);
+        RELATE ($FILE_RECORDS) -> files_for -> ($USER);
         COMMIT TRANSACTION;
-        SELECT * FROM $FILE;";
+        SELECT * FROM $FILE_RECORDS;
+    ";
 
-    let created: Option<FileMetadata> = db
+    let created: Vec<FileMetadata> = db
         .query(SQL)
-        .bind(("FILENAME", filename))
+        .bind(("FILES", files))
         .bind(("USER", user_id))
         .await?
         .take(2)?;
-    created.ok_or(ServerResponseError::InternalError(
-        "Error inserting file metadata into database".to_string(),
-    ))
+
+    Ok(created)
 }
 
 /// Returns the metadata of the file with ID `file_id` uploaded by

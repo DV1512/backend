@@ -6,6 +6,7 @@ use crate::models::file_metadata::FileMetadata;
 use crate::services::files::*;
 use crate::services::user::get::get_user_by_token;
 use crate::state::AppState;
+use actix_multipart::form::tempfile;
 use actix_multipart::form::tempfile::TempFile;
 use actix_multipart::form::MultipartForm;
 use actix_web::dev::HttpServiceFactory;
@@ -35,8 +36,8 @@ impl FilesServiceState {
 
 #[derive(Debug, MultipartForm)]
 struct UploadForm {
-    #[multipart(limit = "100MB")]
-    file: TempFile,
+    #[multipart(rename = "file")]
+    files: Vec<TempFile>,
 }
 
 async fn token_from_request<T>(
@@ -79,24 +80,6 @@ where
         return Err(ServerResponseError::Unauthorized);
     }
     Ok(bearer_token.to_string())
-}
-
-#[post("")]
-async fn upload_file(
-    MultipartForm(form): MultipartForm<UploadForm>,
-    req: HttpRequest,
-    state: web::Data<AppState>,
-) -> Result<impl Responder, ServerResponseError> {
-    let filename: String = form.file.file_name.ok_or(ServerResponseError::BadRequest(
-        "Uploaded file had no filename".to_string(),
-    ))?;
-    let token = token_from_request(&state.db, &req).await?;
-    let metadata = insert_file_metadata(&state.db, filename, token).await?;
-    let file_path = state.files.get_path_for(&metadata.id.id.to_string());
-    if let Err(err) = form.file.file.persist(file_path) {
-        return Err(ServerResponseError::InternalError(err.to_string()));
-    }
-    Ok(HttpResponse::Created().json(metadata))
 }
 
 #[get("/{file_id}")]
@@ -152,6 +135,43 @@ async fn download_file(
     Ok(file)
 }
 
+#[post("")]
+async fn upload_files(
+    MultipartForm(form): MultipartForm<UploadForm>,
+    req: HttpRequest,
+    state: web::Data<AppState>,
+) -> Result<impl Responder, ServerResponseError> {
+    let token = token_from_request(&state.db, &req).await?;
+
+    let filenames: Vec<&str> = form
+        .files
+        .iter()
+        .map(|temp_file| {
+            temp_file
+                .file_name
+                .as_ref()
+                .map_or("unnamed_file", |f| f.as_str())
+        })
+        .collect();
+
+    let metadata = insert_file_metadata(&state.db, filenames.clone(), token).await?;
+
+    let persisted: Result<Vec<_>, _> = form
+        .files
+        .into_iter()
+        .zip(&metadata)
+        .map(|(f, m)| {
+            let path = state.files.get_path_for(&m.id.id.to_string());
+            f.file.persist(path)
+        })
+        .collect();
+
+    if let Err(err) = persisted {
+        return Err(ServerResponseError::InternalError(err.to_string()));
+    }
+    Ok(HttpResponse::Ok().json(metadata))
+}
+
 /// A simple file storage service.
 /// Operations:
 /// * Upload file
@@ -161,7 +181,7 @@ async fn download_file(
 /// * Download file
 pub fn files_service() -> impl HttpServiceFactory {
     web::scope("/files")
-        .service(upload_file)
+        .service(upload_files)
         .service(get_file)
         .service(delete_file)
         .service(list_files)
