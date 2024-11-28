@@ -23,7 +23,7 @@ pub struct FilesServiceState {
 
 impl FilesServiceState {
     pub fn new() -> Self {
-        let env_upload_path = tosic_utils::prelude::env!("FILES_UPLOAD_PATH", "/tmp/file_uploads");
+        let env_upload_path = tosic_utils::prelude::env!("FILES_UPLOAD_PATH");
         let upload_path = std::path::PathBuf::from(env_upload_path);
         Self { upload_path }
     }
