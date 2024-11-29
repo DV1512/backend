@@ -3,6 +3,7 @@ use crate::extractors::AuthenticatedToken;
 use crate::extractors::IntoSession;
 use crate::models::datetime::Datetime;
 use crate::models::file_metadata::FileMetadata;
+use crate::models::UserSession;
 use crate::services::files::*;
 use crate::services::user::get::get_user_by_token;
 use crate::state::AppState;
@@ -16,6 +17,7 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
+use surrealdb::sql::Thing;
 use surrealdb::Surreal;
 
 pub struct FilesServiceState {
@@ -85,24 +87,22 @@ where
 #[get("/{file_id}")]
 async fn get_file(
     file_id: web::Path<String>,
-    auth: AuthenticatedToken,
+    session: UserSession,
     state: web::Data<AppState>,
 ) -> Result<impl Responder, ServerResponseError> {
     let file_id = file_id.into_inner();
-    let token = auth.get_token();
-    let file_metadata = get_file_metadata(&state.db, file_id, token).await?;
+    let file_metadata = get_file_metadata(&state.db, file_id, session.user_id).await?;
     Ok(HttpResponse::Ok().json(file_metadata))
 }
 
 #[delete("/{file_id}")]
 async fn delete_file(
     file_id: web::Path<String>,
-    auth: AuthenticatedToken,
+    session: UserSession,
     state: web::Data<AppState>,
 ) -> Result<impl Responder, ServerResponseError> {
     let file_id = file_id.into_inner();
-    let token = auth.get_token();
-    delete_file_metadata(&state.db, file_id.clone(), token).await?;
+    delete_file_metadata(&state.db, file_id.clone(), session.user_id).await?;
     let file_path = state.files.get_path_for(&file_id);
     if let Err(err) = fs::remove_file(&file_path) {
         return Err(ServerResponseError::InternalError(err.to_string()));
@@ -112,22 +112,20 @@ async fn delete_file(
 
 #[get("")]
 async fn list_files(
-    auth: AuthenticatedToken,
+    session: UserSession,
     state: web::Data<AppState>,
 ) -> Result<impl Responder, ServerResponseError> {
-    let token = auth.get_token();
-    let files = get_file_metadata_by_token(&state.db, token).await?;
+    let files = get_file_metadata_by_token(&state.db, session.user_id).await?;
     Ok(HttpResponse::Ok().json(files))
 }
 
 #[get("/{file_id}/content")]
 async fn download_file(
     file_id: web::Path<String>,
-    auth: AuthenticatedToken,
+    session: UserSession,
     state: web::Data<AppState>,
 ) -> Result<impl Responder, ServerResponseError> {
-    let token = auth.get_token();
-    let metadata = get_file_metadata(&state.db, file_id.into_inner(), token).await?;
+    let metadata = get_file_metadata(&state.db, file_id.into_inner(), session.user_id).await?;
     let file_path = state.files.get_path_for(&metadata.id.id.to_string());
     let Ok(file) = actix_files::NamedFile::open_async(file_path).await else {
         return Err(ServerResponseError::NotFound);

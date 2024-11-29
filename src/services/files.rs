@@ -3,6 +3,7 @@ use crate::models::file_metadata::FileMetadata;
 use crate::services::user::get::get_user_by_token;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use surrealdb::sql::Thing;
 use surrealdb::Surreal;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -33,7 +34,7 @@ where
 
     let files: Vec<Filename> = filenames
         .iter()
-        .map(|filename| Filename::new(*filename))
+        .map(|filename| Filename::new(filename))
         .collect();
 
     const SQL: &str = "
@@ -59,13 +60,11 @@ where
 pub async fn get_file_metadata<T>(
     db: &Arc<Surreal<T>>,
     file_id: String,
-    token: String,
+    user_id: Thing,
 ) -> Result<FileMetadata, ServerResponseError>
 where
     T: surrealdb::Connection,
 {
-    let user = get_user_by_token(db, &token).await?;
-    let user_id = user.id.ok_or(ServerResponseError::NotFound)?;
     const SQL: &str =
         "SELECT VALUE in FROM files_for WHERE meta::id(in) = $FILE AND out = $USER FETCH in;";
     let found = db
@@ -84,13 +83,11 @@ where
 /// holding token `token`.
 pub async fn get_file_metadata_by_token<T>(
     db: &Arc<Surreal<T>>,
-    token: String,
+    user_id: Thing,
 ) -> Result<Vec<FileMetadata>, ServerResponseError>
 where
     T: surrealdb::Connection,
 {
-    let user = get_user_by_token(db, &token).await?;
-    let user_id = user.id.ok_or(ServerResponseError::NotFound)?;
     const SQL: &str = "SELECT VALUE in FROM files_for WHERE out = $USER FETCH in;";
     let files: Vec<FileMetadata> = db.query(SQL).bind(("USER", user_id)).await?.take(0)?;
     Ok(files)
@@ -101,13 +98,11 @@ where
 pub async fn delete_file_metadata<T>(
     db: &Arc<Surreal<T>>,
     file_id: String,
-    token: String,
+    user_id: Thing,
 ) -> Result<(), ServerResponseError>
 where
     T: surrealdb::Connection,
 {
-    let user = get_user_by_token(db, &token).await?;
-    let user_id = user.id.ok_or(ServerResponseError::NotFound)?;
     const SQL: &str =
         "DELETE file WHERE meta::id(id) = $FILE AND ->files_for->user.id CONTAINS $USER;";
     db.query(SQL)
