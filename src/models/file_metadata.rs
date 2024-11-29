@@ -1,8 +1,9 @@
 use super::{datetime::Datetime, thing::Thing};
 use serde::{Deserialize, Serialize};
+use utoipa::{ToResponse, ToSchema};
 
 /// A type representing the metadata of an uploaded file.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, ToResponse)]
 pub struct FileMetadata {
     pub id: Thing,
     /// The original filename of the uploaded file.
@@ -12,4 +13,9 @@ pub struct FileMetadata {
     pub filename: String,
     /// The datetime when the file was uploaded.
     pub created_at: Datetime,
+}
+
+#[derive(ToResponse)]
+pub struct FileMetadataMultiple {
+    pub inner: Vec<FileMetadata>,
 }

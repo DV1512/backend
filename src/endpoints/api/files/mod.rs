@@ -3,6 +3,7 @@ use crate::extractors::AuthenticatedToken;
 use crate::extractors::IntoSession;
 use crate::models::datetime::Datetime;
 use crate::models::file_metadata::FileMetadata;
+use crate::models::FileMetadataMultiple;
 use crate::models::UserSession;
 use crate::services::files::*;
 use crate::services::user::get::get_user_by_token;
@@ -19,6 +20,9 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use surrealdb::sql::Thing;
 use surrealdb::Surreal;
+use utoipa::openapi;
+use utoipa::path;
+use utoipa::OpenApi;
 
 pub struct FilesServiceState {
     pub upload_path: PathBuf,
@@ -84,6 +88,17 @@ where
     Ok(bearer_token.to_string())
 }
 
+#[utoipa::path(
+    get,
+    path = "/(file_id)",
+    tag = "files",
+    responses (
+        (status = 200, response = FileMetadata),
+        (status = 401, description = "Unauthorized"),
+        (status = 404, description = "File not found"),
+        (status = 500, description = "Internal server error"),
+    ),
+)]
 #[get("/{file_id}")]
 async fn get_file(
     file_id: web::Path<String>,
@@ -95,6 +110,17 @@ async fn get_file(
     Ok(HttpResponse::Ok().json(file_metadata))
 }
 
+#[utoipa::path(
+    delete,
+    path = "/(file_id)",
+    tag = "files",
+    responses (
+        (status = 200, description = "File deleted successfully"),
+        (status = 401, description = "Unauthorized"),
+        (status = 404, description = "File not found"),
+        (status = 500, description = "Internal server error"),
+    ),
+)]
 #[delete("/{file_id}")]
 async fn delete_file(
     file_id: web::Path<String>,
@@ -110,6 +136,16 @@ async fn delete_file(
     Ok(HttpResponse::Ok().finish())
 }
 
+#[utoipa::path(
+    get,
+    path = "",
+    tag = "files",
+    responses (
+        (status = 200 , response = FileMetadataMultiple),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal server error"),
+    ),
+)]
 #[get("")]
 async fn list_files(
     session: UserSession,
@@ -119,6 +155,17 @@ async fn list_files(
     Ok(HttpResponse::Ok().json(files))
 }
 
+#[utoipa::path(
+    get,
+    path = "/(file_id)/content",
+    tag = "files",
+    responses (
+        (status = 200),
+        (status = 401, description = "Unauthorized"),
+        (status = 404, description = "File not found"),
+        (status = 500, description = "Internal server error"),
+    ),
+)]
 #[get("/{file_id}/content")]
 async fn download_file(
     file_id: web::Path<String>,
@@ -133,6 +180,16 @@ async fn download_file(
     Ok(file)
 }
 
+#[utoipa::path(
+    post,
+    path = "",
+    tag = "files",
+    responses (
+        (status = 201, response = FileMetadataMultiple),
+        (status = 401),
+        (status = 500),
+    ),
+)]
 #[post("")]
 async fn upload_files(
     MultipartForm(form): MultipartForm<UploadForm>,
@@ -167,7 +224,7 @@ async fn upload_files(
     if let Err(err) = persisted {
         return Err(ServerResponseError::InternalError(err.to_string()));
     }
-    Ok(HttpResponse::Ok().json(metadata))
+    Ok(HttpResponse::Created().json(metadata))
 }
 
 /// A simple file storage service.
@@ -185,3 +242,10 @@ pub fn files_service() -> impl HttpServiceFactory {
         .service(list_files)
         .service(download_file)
 }
+
+#[derive(OpenApi)]
+#[openapi(
+    paths(upload_files, get_file, delete_file, list_files, download_file),
+    components(schemas(FileMetadata), responses(FileMetadata, FileMetadataMultiple))
+)]
+pub(crate) struct FilesApi;
