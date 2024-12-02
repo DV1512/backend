@@ -5,7 +5,7 @@ use crate::models::datetime::Datetime;
 use crate::models::file_metadata::FileMetadata;
 use crate::models::FileMetadataMultiple;
 use crate::models::UserSession;
-use crate::services::files::*;
+use crate::services::files;
 use crate::services::user::get::get_user_by_token;
 use crate::state::AppState;
 use actix_multipart::form::tempfile;
@@ -106,7 +106,7 @@ async fn get_file(
     state: web::Data<AppState>,
 ) -> Result<impl Responder, ServerResponseError> {
     let file_id = file_id.into_inner();
-    let file_metadata = get_file_metadata(&state.db, file_id, session.user_id).await?;
+    let file_metadata = files::get::get_file_metadata(&state.db, file_id, session.user_id).await?;
     Ok(HttpResponse::Ok().json(file_metadata))
 }
 
@@ -128,7 +128,7 @@ async fn delete_file(
     state: web::Data<AppState>,
 ) -> Result<impl Responder, ServerResponseError> {
     let file_id = file_id.into_inner();
-    delete_file_metadata(&state.db, file_id.clone(), session.user_id).await?;
+    files::delete::delete_file_metadata(&state.db, file_id.clone(), session.user_id).await?;
     let file_path = state.files.get_path_for(&file_id);
     if let Err(err) = fs::remove_file(&file_path) {
         return Err(ServerResponseError::InternalError(err.to_string()));
@@ -151,7 +151,7 @@ async fn list_files(
     session: UserSession,
     state: web::Data<AppState>,
 ) -> Result<impl Responder, ServerResponseError> {
-    let files = get_file_metadata_by_token(&state.db, session.user_id).await?;
+    let files = files::get::get_file_metadata_by_token(&state.db, session.user_id).await?;
     Ok(HttpResponse::Ok().json(files))
 }
 
@@ -172,7 +172,8 @@ async fn download_file(
     session: UserSession,
     state: web::Data<AppState>,
 ) -> Result<impl Responder, ServerResponseError> {
-    let metadata = get_file_metadata(&state.db, file_id.into_inner(), session.user_id).await?;
+    let metadata =
+        files::get::get_file_metadata(&state.db, file_id.into_inner(), session.user_id).await?;
     let file_path = state.files.get_path_for(&metadata.id.id.to_string());
     let Ok(file) = actix_files::NamedFile::open_async(file_path).await else {
         return Err(ServerResponseError::NotFound);
@@ -209,7 +210,7 @@ async fn upload_files(
         })
         .collect();
 
-    let metadata = insert_file_metadata(&state.db, filenames.clone(), token).await?;
+    let metadata = files::insert::insert_file_metadata(&state.db, filenames.clone(), token).await?;
 
     let persisted: Result<Vec<_>, _> = form
         .files

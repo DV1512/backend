@@ -16,6 +16,4 @@ pub struct FileMetadata {
 }
 
 #[derive(ToResponse)]
-pub struct FileMetadataMultiple {
-    pub inner: Vec<FileMetadata>,
-}
+pub struct FileMetadataMultiple(pub Vec<FileMetadata>);
