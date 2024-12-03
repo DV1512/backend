@@ -1,4 +1,5 @@
 use crate::error::ServerResponseError;
+use crate::extractors::token_from_request;
 use crate::extractors::AuthenticatedToken;
 use crate::extractors::IntoSession;
 use crate::models::datetime::Datetime;
@@ -44,48 +45,6 @@ impl FilesServiceState {
 struct UploadForm {
     #[multipart(rename = "file")]
     files: Vec<TempFile>,
-}
-
-async fn token_from_request<T>(
-    db: &Arc<Surreal<T>>,
-    req: &HttpRequest,
-) -> Result<String, ServerResponseError>
-where
-    T: surrealdb::Connection,
-{
-    // The reason that we cannot enforce authentication for this endpoint
-    // using an 'AuthenticatedToken' is because of the multipart file upload.
-    // The process of uploading a file via multipart HTTP consists
-    // of (at least) two requests.
-    // For the first request, the client sends a "Expect: expect-100" header.
-    // This header communicates to the server that it should
-    // return "HTTP 100 Continue" if the user has sent an 'Authorization'
-    // header (if authorization is required) and that the file to be uploaded
-    // does not exceed file size limits.
-    // If the first success is successfull, the client will send the contents
-    // of the file to be uploaded with the following requests.
-    // I believe that the problem is that the 'Authorization' header is sent
-    // only for the first request, and not for any subsequent requests.
-    // This results in the client first recieving a "HTTP 100 Continue",
-    // followed by a "HTTP 401 Unauthorized".
-
-    let Some(auth_header) = req.headers().get("authorization") else {
-        return Err(ServerResponseError::Unauthorized);
-    };
-    let Ok(auth_value) = auth_header.to_str() else {
-        return Err(ServerResponseError::BadRequest(
-            "Invalid authorization header value".to_string(),
-        ));
-    };
-    let Some(bearer_token) = auth_value.strip_prefix("Bearer ") else {
-        return Err(ServerResponseError::BadRequest(
-            "No bearer token in authorization header".to_string(),
-        ));
-    };
-    if get_user_by_token(db, bearer_token).await.is_err() {
-        return Err(ServerResponseError::Unauthorized);
-    }
-    Ok(bearer_token.to_string())
 }
 
 #[utoipa::path(
