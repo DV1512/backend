@@ -1,3 +1,4 @@
+use crate::dto::file_upload_form::UploadForm;
 use crate::error::ServerResponseError;
 use crate::extractors::token_from_request;
 use crate::extractors::AuthenticatedToken;
@@ -39,12 +40,6 @@ impl FilesServiceState {
     pub fn get_path_for(&self, filename: &str) -> PathBuf {
         self.upload_path.join(filename)
     }
-}
-
-#[derive(Debug, MultipartForm)]
-struct UploadForm {
-    #[multipart(rename = "file")]
-    files: Vec<TempFile>,
 }
 
 #[utoipa::path(
