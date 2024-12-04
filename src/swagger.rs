@@ -85,11 +85,13 @@ impl Modify for OpenApiSecurityConfig {
     nest(
         (path = "/user", api = crate::endpoints::api::user::UserApi),
         (path = "/oauth", api = crate::endpoints::api::oauth::OauthApi),
+        (path = "/files", api = crate::endpoints::api::files::FilesApi),
     ),
     components(schemas(Datetime, Thing), responses()),
     tags(
         (name = "user", description = "User management"),
         (name = "oauth", description = "OAuth provider management"),
+        (name = "files", description = "Files management"),
     ),
     modifiers(&AddV1Prefix)
 )]

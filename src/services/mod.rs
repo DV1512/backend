@@ -2,6 +2,7 @@
 //! this allows us to call the functions of more complex logic from within the API.
 
 pub(crate) mod auth_for;
+pub(crate) mod files;
 pub(crate) mod health;
 pub(crate) mod token;
 pub(crate) mod user;
