@@ -17,6 +17,7 @@ use actix_web::dev::HttpServiceFactory;
 use actix_web::HttpRequest;
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
+use std::env::temp_dir;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -32,8 +33,18 @@ pub struct FilesServiceState {
 
 impl FilesServiceState {
     pub fn new() -> Self {
-        let env_upload_path = tosic_utils::prelude::env!("FILES_UPLOAD_PATH");
-        let upload_path = std::path::PathBuf::from(env_upload_path);
+        let upload_path = match dirs::home_dir() {
+            Some(path) => {
+                let directory_name = "threatmapper_files";
+                let full_path = path.join(directory_name);
+                match fs::create_dir_all(&full_path) {
+                    Ok(_) => full_path,
+                    Err(_) => temp_dir(),
+                }
+            }
+            None => temp_dir(),
+        };
+
         Self { upload_path }
     }
 
