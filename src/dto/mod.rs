@@ -4,6 +4,7 @@
 //! the server and the client. A DTO is not meant to be used as an internal model and therefore is separate from the models module
 
 pub(crate) mod access_token_request;
+pub(crate) mod file_upload_form;
 pub(crate) mod oauth_callback;
 pub(crate) mod token;
 pub(crate) mod user_info;

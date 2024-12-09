@@ -1,0 +1,4 @@
+DEFINE TABLE IF NOT EXISTS file SCHEMAFULL;
+
+DEFINE FIELD IF NOT EXISTS filename ON file TYPE string;
+DEFINE FIELD IF NOT EXISTS created_at ON file TYPE datetime DEFAULT time::now();
