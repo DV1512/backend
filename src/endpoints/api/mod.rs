@@ -6,6 +6,7 @@ use actix_extensible_rate_limit::RateLimiter;
 use actix_web::dev::ServiceRequest;
 use actix_web::middleware::NormalizePath;
 use actix_web::web;
+use embeddings::embeddings_service;
 use oauth::oauth_service;
 use tracing_actix_web::TracingLogger;
 use user::user_service;
@@ -17,6 +18,7 @@ use utoipa_swagger_ui::{Config, SwaggerUi};
 
 use files::files_service;
 
+pub(crate) mod embeddings;
 pub(crate) mod files;
 pub(crate) mod oauth;
 pub(crate) mod user;
@@ -37,6 +39,7 @@ fn v1_endpoints(
     web::scope("/v1")
         .wrap(TracingLogger::default()) // this is logging using tracing
         .service(user_service())
+        .service(embeddings_service())
         .service(oauth_service())
         .service(files_service())
         .wrap(limiter)
