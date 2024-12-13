@@ -3,6 +3,8 @@ use crate::services::embeddings::{EntryType, MITREEntry};
 use std::sync::Arc;
 use surrealdb::Surreal;
 
+/// Given an embedding, searches for relevant context from
+/// the database
 pub async fn search_embeddings_<T>(
     db: &Arc<Surreal<T>>,
     embedding: Vec<f32>,

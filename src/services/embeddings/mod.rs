@@ -5,6 +5,7 @@ use crate::models::thing::Thing;
 pub mod add;
 pub mod search;
 
+/// Represents an entry from the MITRE ATT&CK database
 #[derive(Serialize, Deserialize)]
 pub struct MITREEntry {
     pub mitre_id: String,
@@ -13,6 +14,8 @@ pub struct MITREEntry {
     pub mitre_url: String,
 }
 
+/// Represents an entry in the 'mitigation' or
+/// 'threat' table in the database.
 #[derive(Serialize, Deserialize)]
 pub struct Entry {
     pub id: Option<Thing>,
