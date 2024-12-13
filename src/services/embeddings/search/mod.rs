@@ -1,6 +1,5 @@
 use crate::error::ServerResponseError;
-use crate::services::embeddings::Entry;
-use crate::services::embeddings::EntryType;
+use crate::services::embeddings::{EntryType, MITREEntry};
 use std::sync::Arc;
 use surrealdb::Surreal;
 
@@ -9,7 +8,7 @@ pub async fn search_embeddings_<T>(
     embedding: Vec<f32>,
     entry_type: EntryType,
     num_neighbors: u32,
-) -> Result<Vec<Entry>, ServerResponseError>
+) -> Result<Vec<MITREEntry>, ServerResponseError>
 where
     T: surrealdb::Connection,
 {
@@ -22,7 +21,7 @@ where
         String::from(entry_type),
         num_neighbors
     );
-    let entries: Vec<Entry> = db
+    let entries: Vec<MITREEntry> = db
         .query(sql)
         .bind(("query_embedding", embedding))
         .await?

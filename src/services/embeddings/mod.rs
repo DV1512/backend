@@ -6,15 +6,21 @@ pub mod add;
 pub mod search;
 
 #[derive(Serialize, Deserialize)]
+pub struct MITREEntry {
+    pub mitre_id: String,
+    pub mitre_name: String,
+    pub mitre_description: String,
+    pub mitre_url: String,
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct Entry {
     pub id: Option<Thing>,
     pub similarity: Option<f32>,
     pub embedding: Option<Vec<f32>>,
 
-    pub mitre_id: String,
-    pub mitre_name: String,
-    pub mitre_description: String,
-    pub mitre_url: String,
+    #[serde(flatten)]
+    mitre: MITREEntry,
 }
 
 #[derive(Serialize, Deserialize)]
