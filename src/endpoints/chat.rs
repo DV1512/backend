@@ -1,11 +1,12 @@
 use std::time::Duration;
-use actix_web::{HttpMessage, HttpRequest, HttpResponse, Responder};
+use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
 use actix_web::web::Bytes;
 use awc::Client;
 use awc::error::SendRequestError;
 use awc::http::Method;
 use tracing::debug;
 use helper_macros::generate_endpoint;
+use crate::dto::chat_request::ChatRequest;
 use crate::error::ServerResponseError;
 
 async fn proxy(path: &str, req: HttpRequest, bytes: Bytes) -> impl Responder {
@@ -14,7 +15,7 @@ async fn proxy(path: &str, req: HttpRequest, bytes: Bytes) -> impl Responder {
 
     let req = client.request_from(url, req.head()).timeout(Duration::from_mins(20));
 
-    let mut resp;
+    let resp;
 
     if !bytes.is_empty() {
         resp = req.send_body(bytes);
@@ -29,7 +30,7 @@ async fn proxy(path: &str, req: HttpRequest, bytes: Bytes) -> impl Responder {
 
             let mut client_res = HttpResponse::build(res.status());
 
-            let mut response;
+            let response;
 
             response = client_res.content_type(content_type);
 
@@ -51,19 +52,22 @@ async fn proxy(path: &str, req: HttpRequest, bytes: Bytes) -> impl Responder {
 generate_endpoint! {
     fn chat;
     method: post;
-    path: "/chat";
-    /*docs: {
-        tag: "chat";
+    path: "/chat/completions";
+    docs: {
+        tag: "llm",
+        context_path: "/",
         responses: {
-            (status = 200, description = "Request successful")
+            (status = 200, description = "Everything works just fine!")
         }
-    }*/
+    }
     params: {
         req: HttpRequest,
-        body: Bytes,
+        body: web::Json<ChatRequest>,
     };
     {
+        let body = serde_json::to_vec(&body.into_inner()).expect("Failed to serialize ChatRequest");
+
         debug!("Received chat request");
-        Ok(proxy("chat/structured", req, body).await)
+        Ok(proxy("chat/completions", req, Bytes::from(body)).await)
     }
 }

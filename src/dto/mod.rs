@@ -9,6 +9,7 @@ pub(crate) mod token;
 pub(crate) mod user_info;
 pub(crate) mod user_registration_request;
 pub(crate) mod user_update_request;
+pub(crate) mod chat_request;
 
 pub(crate) use {
     access_token_request::*, oauth_callback::*, token::*, user_info::*,
