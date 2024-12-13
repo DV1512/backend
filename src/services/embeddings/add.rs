@@ -1,6 +1,5 @@
-use super::EntryType;
 use crate::error::ServerResponseError;
-use crate::services::embeddings::Entry;
+use crate::models::{Entry, EntryType};
 use std::sync::Arc;
 use surrealdb::Surreal;
 
@@ -13,6 +12,6 @@ pub async fn insert_embeddings<T>(
 where
     T: surrealdb::Connection,
 {
-    let embeddings: Vec<Entry> = db.insert(String::from(entry_type)).content(entries).await?;
+    let embeddings: Vec<Entry> = db.insert(entry_type.to_string()).content(entries).await?;
     Ok(embeddings)
 }

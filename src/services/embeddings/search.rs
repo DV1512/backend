@@ -1,5 +1,6 @@
 use crate::error::ServerResponseError;
-use crate::services::embeddings::{EntryType, MITREEntry};
+use crate::models::MITREEntry;
+use crate::services::embeddings::EntryType;
 use std::sync::Arc;
 use surrealdb::Surreal;
 
@@ -19,8 +20,7 @@ where
         SELECT mitre_id, mitre_name, mitre_description, mitre_url
         FROM {} 
         WHERE embedding <|{},40|> $query_embedding;",
-        String::from(entry_type),
-        num_neighbors
+        entry_type, num_neighbors
     );
     let entries: Vec<MITREEntry> = db
         .query(sql)
