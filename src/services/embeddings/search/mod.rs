@@ -14,8 +14,7 @@ where
 {
     let sql = format!(
         "
-        SELECT mitre_id, mitre_name, mitre_description, mitre_url,
-        vector::similarity::cosine(embedding, $query_embedding) AS similarity
+        SELECT mitre_id, mitre_name, mitre_description, mitre_url
         FROM {} 
         WHERE embedding <|{},40|> $query_embedding;",
         String::from(entry_type),
