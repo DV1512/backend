@@ -1,6 +1,8 @@
+pub mod delete;
 pub mod get;
 pub mod update;
 
+use crate::endpoints::user::delete::*;
 use crate::endpoints::user::get::*;
 use crate::endpoints::user::update::*;
 use crate::extractors::Authenticated;
@@ -17,7 +19,7 @@ use utoipa::OpenApi;
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(get_user_by, update_user),
+    paths(get_user_by, update_user, delete_user_endpoint),
     components(
         schemas(Role, UserInfo, GetUserBy),
         responses(UserInfoExampleResponses)
@@ -30,4 +32,5 @@ pub fn user_service() -> impl actix_web::dev::HttpServiceFactory {
         .guard(Acceptable::new(mime::APPLICATION_JSON).match_star_star())
         .service(get_user_by)
         .service(update_user)
+        .service(delete_user_endpoint)
 }
