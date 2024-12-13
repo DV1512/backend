@@ -15,5 +15,6 @@ pub struct FileMetadata {
     pub created_at: Datetime,
 }
 
+#[allow(dead_code)]
 #[derive(ToResponse)]
 pub struct FileMetadataMultiple(pub Vec<FileMetadata>);

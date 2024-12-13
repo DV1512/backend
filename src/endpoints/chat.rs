@@ -8,6 +8,7 @@ use tracing::debug;
 use helper_macros::generate_endpoint;
 use crate::dto::chat_request::ChatRequest;
 use crate::error::ServerResponseError;
+use crate::extractors::Authenticated;
 
 async fn proxy(path: &str, req: HttpRequest, bytes: Bytes) -> impl Responder {
     let client = Client::default();
@@ -61,6 +62,7 @@ generate_endpoint! {
         }
     }
     params: {
+        _auth: Authenticated,
         req: HttpRequest,
         body: web::Json<ChatRequest>,
     };
