@@ -12,7 +12,6 @@ pub(crate) mod api;
 pub(crate) mod health;
 mod not_found;
 mod test;
-mod chat;
 
 use crate::middlewares::logger::LoggingMiddleware;
 pub(crate) use api::*;
@@ -28,7 +27,6 @@ pub(crate) fn index_scope(
 ) -> impl actix_web::dev::HttpServiceFactory {
     web::scope("")
         .service(health::health)
-        .service(chat::chat)
         .service(api(limiter, logger))
         .default_service(web::to(not_found::not_found))
 }

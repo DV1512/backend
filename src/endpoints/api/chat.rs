@@ -62,9 +62,9 @@ generate_endpoint! {
         }
     }
     params: {
-        _auth: Authenticated,
         req: HttpRequest,
         body: web::Json<ChatRequest>,
+        _auth: Authenticated,
     };
     {
         let body = serde_json::to_vec(&body.into_inner()).expect("Failed to serialize ChatRequest");

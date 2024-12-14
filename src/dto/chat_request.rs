@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, Debug)]
 pub enum Keyword {
     Website,
     Web,
@@ -15,9 +15,13 @@ pub enum Keyword {
     Encryption
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, Debug)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ChatRequest {
-    Structured { prompt: String, keywords: Vec<Keyword> },
+    Structured {
+        prompt: String,
+        #[serde(default)]
+        keywords: Vec<Keyword>
+    },
     Chat { prompt: String },
 }
