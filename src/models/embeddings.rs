@@ -1,9 +1,10 @@
 use serde::{Deserialize, Serialize};
+use utoipa::{ToResponse, ToSchema};
 
 use super::thing::Thing;
 
 /// Represents an entry from the MITRE ATT&CK database
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct MITREEntry {
     pub mitre_id: String,
     pub mitre_name: String,
@@ -11,7 +12,11 @@ pub struct MITREEntry {
     pub mitre_url: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[allow(dead_code)]
+#[derive(ToResponse)]
+pub struct MITREEntries(pub Vec<MITREEntry>);
+
+#[derive(Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum EntryType {
     Threat,
@@ -20,7 +25,7 @@ pub enum EntryType {
 
 /// Represents an entry in the 'mitigation' or
 /// 'threat' table in the database.
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct Entry {
     pub id: Option<Thing>,
     pub similarity: Option<f32>,

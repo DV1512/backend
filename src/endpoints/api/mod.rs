@@ -23,6 +23,7 @@ pub(crate) mod files;
 pub(crate) mod oauth;
 pub(crate) mod user;
 
+pub(crate) use embeddings::*;
 pub(crate) use files::*;
 pub(crate) use oauth::*;
 pub(crate) use user::*;

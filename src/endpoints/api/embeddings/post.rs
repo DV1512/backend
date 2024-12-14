@@ -1,4 +1,5 @@
 use actix_web::{post, web, HttpResponse, Responder};
+use helper_macros::generate_endpoint;
 
 use crate::{
     dto::embeddings::{AddEmbeddingsRequest, SearchEmbeddingsRequest},
@@ -7,26 +8,25 @@ use crate::{
     state::AppState,
 };
 
-#[post("")]
-pub async fn add_embeddings(
-    web::Json(data): web::Json<AddEmbeddingsRequest>,
-    state: web::Data<AppState>,
-) -> Result<impl Responder, ServerResponseError> {
-    insert_embeddings(&state.db, data.entries, data.entry_type).await?;
-    Ok(HttpResponse::Created())
-}
-
-#[post("/search")]
-async fn search_embeddings(
-    web::Json(data): web::Json<SearchEmbeddingsRequest>,
-    state: web::Data<AppState>,
-) -> Result<impl Responder, ServerResponseError> {
-    let embeddings = search_embeddings_(
-        &state.db,
-        data.embedding,
-        data.entry_type,
-        data.num_neighbors,
-    )
-    .await?;
-    Ok(HttpResponse::Ok().json(embeddings))
+generate_endpoint! {
+    fn add_embeddings;
+    method: post;
+    path: "";
+    docs: {
+        params: (),
+        tag: "embeddings",
+        responses: {
+            (status = 201, description = "Embeddings created"),
+            (status = 500, description = "Internal server error"),
+        },
+    }
+    params: {
+        data: web::Json<AddEmbeddingsRequest>,
+        state: web::Data<AppState>,
+    };
+    {
+        let data = data.into_inner();
+        insert_embeddings(&state.db, data.entries, data.entry_type).await?;
+        Ok(HttpResponse::Created())
+    }
 }
