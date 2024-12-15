@@ -37,6 +37,7 @@ macro_rules! app {
     ($state:ident, $limiter:ident, $logger:ident, $frontend_url:ident, $base_url:ident, $key:ident, $cors:ident, $identity:ident) => {
         actix_web::App::new()
             .app_data($state.clone())
+            .app_data(actix_web::web::JsonConfig::default().limit(usize::MAX))
             //.wrap(AuthMiddleware) // proof of concept, this should be moved into each individual service we want to secure with auth
             .external_resource("frontend", $frontend_url.clone())
             .external_resource("base_url", $base_url.clone())
